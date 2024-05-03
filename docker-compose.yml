@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   app:
-    container_name: relojclinico-app
+    container_name: 1MNoticias-app
     build: .
     ports:
       - "3000:3000"
@@ -14,12 +14,12 @@ services:
       - mongodb
 
   mongodb:
-    container_name: relojclinico-mongodb
+    container_name: 1MNoticias-mongodb
     image: mongo
     ports:
       - "27018:27017"
     environment:
-      - MONGO_INITDB_DATABASE=relojclinico
+      - MONGO_INITDB_DATABASE=1MNoticias
     volumes:
       - mongodb-data:/data/db
 

@@ -63,6 +63,9 @@ function verifyAdminRole(req, res, next) {
  *             required:
  *               - title
  *               - content
+ *               - date_created
+ *               - date_created_gmt
+ *               - taxonomies
  *             properties:
  *               title:
  *                 type: string
@@ -70,6 +73,17 @@ function verifyAdminRole(req, res, next) {
  *               content:
  *                 type: string
  *                 example: Contenido del post
+ *               date_created:
+ *                 type: string
+ *                 example: 2022-01-01
+ *               date_created_gmt:
+ *                 type: string
+ *                 example: 2022-01-01T00:00:00Z
+ *               taxonomies:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: [tag1, tag2]
  *     responses:
  *       201:
  *         description: Post creado exitosamente
@@ -91,6 +105,18 @@ function verifyAdminRole(req, res, next) {
  *         title:
  *           type: string
  *         content:
+ *           type: string
+ *         date_created:
+ *           type: string
+ *         date_created_gmt:
+ *           type: string
+ *         taxonomies:
+ *           type: array
+ *           items:
+ *             type: string
+ *         category:
+ *           type: string
+ *         createdBy:
  *           type: string
  */
 router.post('/', verifyAdminRole, (req, res) => {
@@ -164,7 +190,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/user/:userId', async (req, res) => {
     try {
-        const posts = await Post.find({ userId: req.params.userId });
+        const posts = await Post.find({ createdBy: req.params.userId });
 
         res.json(posts);
     } catch (error) {
@@ -251,6 +277,17 @@ router.get('/:id', async (req, res) => {
  *               content:
  *                 type: string
  *                 example: Nuevo contenido del posteo
+ *               date_created:
+ *                 type: string
+ *                 example: 2022-01-01
+ *               date_created_gmt:
+ *                 type: string
+ *                 example: 2022-01-01T00:00:00Z
+ *               taxonomies:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: [tag1, tag2]
  *     produces:
  *       - application/json
  *     responses:
@@ -326,7 +363,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         // Check if the user is the owner of the post
-        if (req.userRole === 'admin' || post.userId === req.userId) {
+        if (req.userRole === 'admin' || post.createdBy.toString() === req.userId) {
             await post.remove();
             res.json({ success: true, message: 'Post deleted successfully' });
         } else {
