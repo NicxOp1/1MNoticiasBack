@@ -37,6 +37,12 @@ const Schema = mongoose.Schema; // Asegúrate de que esta línea esté presente
  *          createdBy:
  *            type: string
  *            description: The ID of the user who created the post.
+ *          image:
+ *            type: string
+ *            description: The URL of the image.
+ *          imageDescription:
+ *            type: string
+ *            description: The description of the image.
  *        example:
  *           title: Post Title
  *           content: Post Content
@@ -45,6 +51,8 @@ const Schema = mongoose.Schema; // Asegúrate de que esta línea esté presente
  *           taxonomies: ["taxonomy1", "taxonomy2"]
  *           category: Category
  *           createdBy: 60d0fe4b6469270015c2e9c1
+ *           image: "/uploads/image.jpg"
+ *           imageDescription: "This is an image description"
  */
 const PostSchema = new mongoose.Schema({
     title: { type: String, required: true },
@@ -54,7 +62,8 @@ const PostSchema = new mongoose.Schema({
     taxonomies: { type: [String], required: true },
     category: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: 'Usuario'},
-
+    image: { type: String }, // Nuevo campo para la URL de la imagen
+    imageDescription: { type: String } // Nuevo campo para la descripción de la imagen
 });
 
 PostSchema.pre('save', function(next) {

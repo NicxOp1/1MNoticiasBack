@@ -1,8 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/user.js');
 const Post = require('../models/post.js'); // Asegúrate de que la ruta al archivo del modelo sea correcta
+const path = require('path');
+const upload = multer({ dest: path.join(__dirname, '../assets') });
 
 const router = express.Router();
 
@@ -42,7 +45,7 @@ function verifyAdminRole(req, res, next) {
 }
 
 
-// Crea un nuevo post
+// Crea un nuevo post 
 /**
  * @swagger
  * /post:
@@ -50,81 +53,80 @@ function verifyAdminRole(req, res, next) {
  *     summary: Crea un nuevo post
  *     description: Añade un nuevo post a la base de datos con la información proporcionada.
  *     consumes:
- *       - application/json
+ *       - multipart/form-data
  *     produces:
  *       - application/json
- *     requestBody:
- *       description: Datos del post para crear un nuevo registro.
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - content
- *               - date_created
- *               - date_created_gmt
- *               - taxonomies
- *             properties:
- *               title:
- *                 type: string
- *                 example: Título del post
- *               content:
- *                 type: string
- *                 example: Contenido del post
- *               date_created:
- *                 type: string
- *                 example: 2022-01-01
- *               date_created_gmt:
- *                 type: string
- *                 example: 2022-01-01T00:00:00Z
- *               taxonomies:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: [tag1, tag2]
+ *     parameters:
+ *       - in: formData
+ *         name: title
+ *         type: string
+ *         required: true
+ *         description: El título del post.
+ *       - in: formData
+ *         name: content
+ *         type: string
+ *         required: true
+ *         description: El contenido del post.
+ *       - in: formData
+ *         name: date_created
+ *         type: string
+ *         required: true
+ *         description: La fecha de creación del post.
+ *       - in: formData
+ *         name: date_created_gmt
+ *         type: string
+ *         required: true
+ *         description: La fecha de creación del post en GMT.
+ *       - in: formData
+ *         name: taxonomies
+ *         type: array
+ *         items:
+ *           type: string
+ *         required: true
+ *         description: Las taxonomías del post.
+ *       - in: formData
+ *         name: category
+ *         type: string
+ *         description: La categoría del post.
+ *       - in: formData
+ *         name: createdBy
+ *         type: string
+ *         description: El ID del usuario que creó el post.
+ *       - in: formData
+ *         name: image
+ *         type: file
+ *         description: La imagen para el post.
+ *       - in: formData
+ *         name: imageDescription
+ *         type: string
+ *         description: La descripción de la imagen.
  *     responses:
  *       201:
  *         description: Post creado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               $ref: '#/components/schemas/Post'
  *       400:
  *         description: Datos inválidos proporcionados
  *       500:
  *         description: Error interno del servidor
- *
- * components:
- *   schemas:
- *     Post:
- *       type: object
- *       properties:
- *         title:
- *           type: string
- *         content:
- *           type: string
- *         date_created:
- *           type: string
- *         date_created_gmt:
- *           type: string
- *         taxonomies:
- *           type: array
- *           items:
- *             type: string
- *         category:
- *           type: string
- *         createdBy:
- *           type: string
  */
-router.post('/', verifyAdminRole, (req, res) => {
-    const newPost = new Post(req.body);
+router.post('/', upload.single('image'), async (req, res) => {
+    try {
+        // req.file es el archivo 'image'
+        // req.body contendrá el texto 'title', 'content', etc.
 
-    newPost.save()
-        .then(() => res.json({ message: 'Post guardado correctamente' }))
-        .catch(err => res.status(400).json({ error: err }));
+        // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
+        const newPost = new Post({
+            ...req.body,
+            image: req.file.path // si se subió una imagen, almacene la ruta de la imagen
+        });
+
+        // Guardar el nuevo documento Post en la base de datos
+        newPost.save()
+            .then(() => res.json({ message: 'Post guardado correctamente' }))
+            .catch(err => res.status(400).json({ error: err }));
+
+    } catch (err) {
+        res.status(400).json({ error: err });
+    }
 });
 
 // Obtiene todos los posteos
@@ -254,76 +256,102 @@ router.get('/:id', async (req, res) => {
  * @swagger
  * /post/{id}:
  *   put:
- *     summary: Actualiza un posteo por id
- *     description: Actualiza un posteo de la base de datos utilizando su id como parámetro.
+ *     summary: Actualiza un post existente
+ *     description: Actualiza un post existente en la base de datos con la información proporcionada. Si se proporciona una nueva imagen, se cargará a S3 y se actualizará la URL de la imagen en la base de datos.
+ *     consumes:
+ *       - multipart/form-data
+ *     produces:
+ *       - application/json
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: Id del posteo a actualizar
- *         schema:
+ *         type: string
+ *         description: El ID del post a actualizar.
+ *       - in: formData
+ *         name: title
+ *         type: string
+ *         description: El nuevo título del post.
+ *       - in: formData
+ *         name: content
+ *         type: string
+ *         description: El nuevo contenido del post.
+ *       - in: formData
+ *         name: date_created
+ *         type: string
+ *         description: La nueva fecha de creación del post.
+ *       - in: formData
+ *         name: date_created_gmt
+ *         type: string
+ *         description: La nueva fecha de creación del post en GMT.
+ *       - in: formData
+ *         name: taxonomies
+ *         type: array
+ *         items:
  *           type: string
- *     requestBody:
- *       description: Datos del posteo para actualizar el registro.
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *                 example: Nuevo título del posteo
- *               content:
- *                 type: string
- *                 example: Nuevo contenido del posteo
- *               date_created:
- *                 type: string
- *                 example: 2022-01-01
- *               date_created_gmt:
- *                 type: string
- *                 example: 2022-01-01T00:00:00Z
- *               taxonomies:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: [tag1, tag2]
- *     produces:
- *       - application/json
+ *         description: Las nuevas taxonomías del post.
+ *       - in: formData
+ *         name: category
+ *         type: string
+ *         description: La nueva categoría del post.
+ *       - in: formData
+ *         name: createdBy
+ *         type: string
+ *         description: El nuevo ID del usuario que creó el post.
+ *       - in: formData
+ *         name: image
+ *         type: file
+ *         description: La nueva imagen para el post (opcional).
+ *       - in: formData
+ *         name: imageDescription
+ *         type: string
+ *         description: La nueva descripción de la imagen.
  *     responses:
  *       200:
- *         description: Posteo actualizado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               $ref: '#/components/schemas/Post'
+ *         description: Post actualizado exitosamente. Devuelve el post actualizado.
+ *       400:
+ *         description: Datos inválidos proporcionados
  *       404:
- *         description: Posteo no encontrado
+ *         description: No se encontró el post
  *       500:
  *         description: Error interno del servidor
  */
-router.put('/:id', verifyAdminRole, async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
     try {
-        const post = await Post.findByIdAndUpdate(
-            req.params.id,
-            { ...req.body, updated_at: Date.now() },
-            { new: true }
-        );
+        let imageUrl;
+        if (req.file) {
+            // Convertir la imagen a Base64
+            const imageBase64 = req.file.buffer.toString('base64');
 
-        if (post) {
-            res.json(post);
-        } else {
-            res.status(404).json({
-                success: false,
-                message: 'Post not found'
-            });
+            // Carga al almacenamiento en la nube
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME, // Nombre del bucket en S3
+                Key: `${Date.now().toString()}-${req.file.originalname}`, // Nombre del archivo en S3
+                Body: Buffer.from(imageBase64, 'base64'), // Datos de la imagen
+                ContentType: req.file.mimetype, // Tipo de contenido
+                ACL: 'public-read' // Hacer que la imagen sea de lectura pública
+            };
+
+            const uploadResponse = await s3.upload(params).promise();
+
+            // Generar URL de la imagen
+            imageUrl = uploadResponse.Location;
         }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while updating the post'
-        });
+
+        // Actualizar el documento Post con los datos del cuerpo de la solicitud
+        const updatedPost = await Post.findByIdAndUpdate(req.params.id, {
+            ...req.body,
+            ...(imageUrl && { image: imageUrl }) // si se subió una imagen, actualice la URL de la imagen
+        }, { new: true }); // { new: true } devuelve el documento actualizado
+
+        if (!updatedPost) {
+            return res.status(404).json({ message: 'No se encontró el post con el id dado' });
+        }
+
+        res.json({ message: 'Post actualizado correctamente', post: updatedPost });
+
+    } catch (err) {
+        res.status(400).json({ error: err });
     }
 });
 
