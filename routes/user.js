@@ -5,7 +5,20 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/user.js');
 const Post = require('../models/post.js'); // Asegúrate de que la ruta al archivo del modelo sea correcta
 const path = require('path');
-const upload = multer({ dest: path.join(__dirname, '../assets') });
+const fs = require('node:fs'); // Import the fs module
+/* const upload = multer({ dest: path.join(__dirname, '../assets') }); */
+/* const multer = require('multer'); */
+
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, 'C:\\Users\\Nicolas Lopez\\Desktop\\SCRIPTS\\Black Magic\\1MnoticiasBack\\assets');
+  },
+  filename: function(req, file, cb) {
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const router = express.Router();
 
@@ -20,6 +33,7 @@ function validateUserFields(req, res, next) {
 
     next();
 }
+
 
 function verifyAdminRole(req, res, next) {
     const token = req.headers['x-access-token'];
@@ -39,11 +53,10 @@ function verifyAdminRole(req, res, next) {
         if (req.userRole !== 'admin') {
             return res.status(403).json({ success: false, message: 'Requires admin role!' });
         }
-
+        
         next();
     });
 }
-
 
 // Crea un nuevo post 
 /**
@@ -110,45 +123,62 @@ function verifyAdminRole(req, res, next) {
  */
 router.post('/', upload.single('image'), async (req, res) => {
     try {
+        console.log('req.body:', req.body); // registrar el cuerpo de la solicitud
+        console.log('req.file:', req.file); // registrar el archivo de la solicitud
+
         // req.file es el archivo 'image'
         // req.body contendrá el texto 'title', 'content', etc.
-
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
             ...req.body,
-            image: req.file.path // si se subió una imagen, almacene la ruta de la imagen
+            createdBy: req.user.id, // asignar el id del usuario que creó el post
+            image: req.file ? req.file.path : null // si se subió una imagen, almacene la ruta de la imagen
         });
 
+        console.log('newPost:', newPost); // registrar el nuevo Post
+
+        saveImage(req.file)
+        console.log(saveImage(req.file))
         // Guardar el nuevo documento Post en la base de datos
         newPost.save()
             .then(() => res.json({ message: 'Post guardado correctamente' }))
-            .catch(err => res.status(400).json({ error: err }));
+            .catch(err => {
+                console.log('Error al guardar el Post:', err); // registrar el error
+                res.status(400).json({ error: "el post no pudo guardarse por algun problema del servidor" });
+            });
 
     } catch (err) {
-        res.status(400).json({ error: err });
+        console.log('Error en el controlador:', err); // registrar el error
+        res.status(400).json({ error: "Hay un error con tu peticion" });
     }
 });
+function saveImage(file) {  
+    const newPath = path.join(__dirname, '../assets', file.originalname);
+    fs.renameSync(file.path, newPath);
+    return newPath
+}
 
-// Obtiene todos los posteos
+
+// Crea un nuevo post
 /**
  * @swagger
  * /post:
- *   get:
- *     summary: Obtiene todos los posteos
- *     description: Obtiene todos los posteos de la base de datos.
+ *   post:
+ *     summary: Crea un nuevo post
+ *     description: Añade un nuevo post a la base de datos con la información proporcionada.
+ *     consumes:
+ *       - multipart/form-data
  *     produces:
  *       - application/json
- *     responses:
- *       200:
- *         description: Posteos encontrados exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Post'
- *       500:
- *         description: Error interno del servidor
+ *     parameters:
+ *       - in: formData
+ *         name: title
+ *         type: string
+ *         required: true
+ *         description: El título del post.
+ *       - in: formData
+ *         name: content
+ *
  */
 router.get('/', async (req, res) => {
     try {
@@ -409,7 +439,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Hace un usuario admin
-router.post('/admin', async (req, res) => {
+router.post('/admin',verifyAdminRole,async (req, res) => {
     try {
         const { nombre, apellido, password } = req.body;
 
@@ -443,52 +473,6 @@ router.post('/admin', async (req, res) => {
     }
 });
 
-// Actualiza un usuario por nombre
-/**
- * @swagger
- * /usuario/{nombre}:
- *   put:
- *     summary: Actualiza un usuario por nombre
- *     description: Actualiza un usuario de la base de datos utilizando su nombre como parámetro.
- *     parameters:
- *       - in: path
- *         name: nombre
- *         required: true
- *         description: Nombre del usuario a actualizar
- *         schema:
- *           type: string
- *     requestBody:
- *       description: Datos del usuario para actualizar el registro.
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nombre:
- *                 type: string
- *                 example: Nuevo nombre del usuario
- *               apellido:
- *                 type: string
- *                 example: Nuevo apellido del usuario
- *               password:
- *                 type: string
- *                 example: Nueva contraseña del usuario
- *     produces:
- *       - application/json
- *     responses:
- *       200:
- *         description: Usuario actualizado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               $ref: '#/components/schemas/Usuario'
- *       404:
- *         description: Usuario no encontrado
- *       500:
- *         description: Error interno del servidor
- */
 router.put('/:nombre', async (req, res) => {
     try {
         const user = await Usuario.findOneAndUpdate(
@@ -650,6 +634,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// controlador para crear un nuevo usuario como administrador
 /**
  * @swagger
  * /usuario/admin:

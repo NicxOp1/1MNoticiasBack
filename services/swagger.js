@@ -1,7 +1,7 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const options = {
-    apis: ['./routes/*'],
+    apis: ['./routes/*', './1MnoticiasBack/models/post.js'],
     swaggerDefinition: {
         openapi: '3.0.0',
         info: {
