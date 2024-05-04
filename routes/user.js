@@ -129,7 +129,7 @@ function verifyUserRole(req, res, next) {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/',verifyUserRole, async (req, res) => {
+router.post('/'/*, verifyUserRole */, async (req, res) => {
     try {
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
