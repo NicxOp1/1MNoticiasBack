@@ -28,10 +28,14 @@ const mongoose = require('mongoose');
  *          password:
  *            type: string
  *            description: The password of the user.
+ *          role:
+ *            type: string
+ *            description: The role of the user or admin.
  *        example:
  *           nombre: Juan
  *           apellido: Perez
  *           password: miContraseñaSegura
+ *          role: admin
  */
 const schema = new mongoose.Schema({
     created_at: {type: Date, required: false},
@@ -39,6 +43,7 @@ const schema = new mongoose.Schema({
     nombre: {type: String, required: true},
     apellido: {type: String, required: true},
     password: {type: String, required: true},
+    role: {type: String, required: true},
 });
 
 const Usuario = mongoose.model('Usuario', schema, 'usuarios');

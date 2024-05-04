@@ -136,7 +136,7 @@ function verifyUserRole(req, res, next) {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/'/*, verifyUserRole */, async (req, res) => {
+router.post('/', verifyUserRole, async (req, res) => {
     try {
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
@@ -440,7 +440,7 @@ router.delete('/:id', async (req, res) => {
 // crea un usuario admin
 router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
     try {
-        const { nombre, apellido, password } = req.body;
+        const { nombre, apellido, password, role } = req.body;
 
         // Check if user already exists
         const existingUser = await Usuario.findOne({ nombre });
@@ -457,13 +457,14 @@ router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
             nombre,
             apellido,
             password: hashedPassword,
+            role
         });
 
         // Save the new admin user to the database
         await newAdmin.save();
 
         // Generate a token for the admin user
-        const token = jwt.sign({ id: newAdmin._id, role: 'admin' }, process.env.Token, { expiresIn: '1d' });
+        const token = jwt.sign({ id: newAdmin._id, role: role }, process.env.Token, { expiresIn: '1d' });
 
         res.status(201).json({ message: 'Usuario admin creado exitosamente', token });
     } catch (error) {
@@ -471,7 +472,7 @@ router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 });
-
+//editar user segun nombre
 router.put('/:nombre', async (req, res) => {
     try {
         const user = await Usuario.findOneAndUpdate(
@@ -550,7 +551,7 @@ router.delete('/:nombre', async (req, res) => {
 // Controlador para ingresar y hacer login como usuario
 /**
  * @swagger
- * /usuario/login:
+ * /login:
  *   post:
  *     summary: Ingresar
  *     description: Permite a un usuario iniciar sesión utilizando su nombre y contraseña.
@@ -568,6 +569,7 @@ router.delete('/:nombre', async (req, res) => {
  *             required:
  *               - nombre
  *               - password
+ *               - role
  *             properties:
  *               nombre:
  *                 type: string
@@ -575,6 +577,9 @@ router.delete('/:nombre', async (req, res) => {
  *               password:
  *                 type: string
  *                 example: Contraseña del usuario
+ *              role:
+ *                type: string
+ *               example: admin
  *     responses:
  *       200:
  *         description: Inicio de sesión exitoso
@@ -611,8 +616,8 @@ router.post('/login', async (req, res) => {
 
         // Comprueba si el usuario existe y si la contraseña es correcta
         if (user && bcrypt.compareSync(req.body.password, user.password)) {
-            // Crea un token
-            const token = jwt.sign({ id: user._id, role: 'user' }, process.env.Token, { expiresIn: '1d' });
+            // Crea un token con el rol del usuario
+            const token = jwt.sign({ id: user._id, role: user.role }, process.env.Token, { expiresIn: '1d' });
 
             res.status(200).json({
                 success: true,
@@ -681,7 +686,8 @@ router.post('/usuario/admin', verifyAdminRole, validateUserFields, async (req, r
             updated_at: null,
             nombre: req.body.nombre,
             apellido: req.body.apellido,
-            password: bcrypt.hashSync(req.body.password, 8)
+            password: bcrypt.hashSync(req.body.password, 8),
+            role: req.body.role
         });
 
         const user = await newUser.save();
