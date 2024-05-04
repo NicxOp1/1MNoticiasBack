@@ -45,7 +45,7 @@ function verifyAdminRole(req, res, next) {
 // Crea un nuevo post
 /**
  * @swagger
- * /post:
+ * /:
  *   post:
  *     summary: Crea un nuevo post
  *     description: Añade un nuevo post a la base de datos con la información proporcionada.
@@ -84,6 +84,12 @@ function verifyAdminRole(req, res, next) {
  *                 items:
  *                   type: string
  *                 example: [tag1, tag2]
+ *               category:
+ *                 type: string
+ *                 example: Categoría del post
+ *               createdBy:
+ *                 type: string
+ *                 example: Creador del post
  *     responses:
  *       201:
  *         description: Post creado exitosamente
@@ -91,7 +97,7 @@ function verifyAdminRole(req, res, next) {
  *           application/json:
  *             schema:
  *               type: object
- *               $ref: '#/components/schemas/Post'
+ *               $ref: '#/models/post.js'
  *       400:
  *         description: Datos inválidos proporcionados
  *       500:
