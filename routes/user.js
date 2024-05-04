@@ -61,7 +61,7 @@ function verifyAdminRole(req, res, next) {
 // Crea un nuevo post 
 /**
  * @swagger
- * /post:
+ * /:
  *   post:
  *     summary: Crea un nuevo post
  *     description: Añade un nuevo post a la base de datos con la información proporcionada.
@@ -69,53 +69,51 @@ function verifyAdminRole(req, res, next) {
  *       - multipart/form-data
  *     produces:
  *       - application/json
- *     parameters:
- *       - in: formData
- *         name: title
- *         type: string
- *         required: true
- *         description: El título del post.
- *       - in: formData
- *         name: content
- *         type: string
- *         required: true
- *         description: El contenido del post.
- *       - in: formData
- *         name: date_created
- *         type: string
- *         required: true
- *         description: La fecha de creación del post.
- *       - in: formData
- *         name: date_created_gmt
- *         type: string
- *         required: true
- *         description: La fecha de creación del post en GMT.
- *       - in: formData
- *         name: taxonomies
- *         type: array
- *         items:
- *           type: string
- *         required: true
- *         description: Las taxonomías del post.
- *       - in: formData
- *         name: category
- *         type: string
- *         description: La categoría del post.
- *       - in: formData
- *         name: createdBy
- *         type: string
- *         description: El ID del usuario que creó el post.
- *       - in: formData
- *         name: image
- *         type: file
- *         description: La imagen para el post.
- *       - in: formData
- *         name: imageDescription
- *         type: string
- *         description: La descripción de la imagen.
+ *     requestBody:
+ *       description: Datos del post para crear un nuevo registro.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - content
+ *               - date_created
+ *               - date_created_gmt
+ *               - taxonomies
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Título del post
+ *               content:
+ *                 type: string
+ *                 example: Contenido del post
+ *               date_created:
+ *                 type: string
+ *                 example: 2022-01-01
+ *               date_created_gmt:
+ *                 type: string
+ *                 example: 2022-01-01T00:00:00Z
+ *               taxonomies:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: [tag1, tag2]
+ *               category:
+ *                 type: string
+ *                 example: Categoría del post
+ *               createdBy:
+ *                 type: string
+ *                 example: Creador del post
  *     responses:
  *       201:
  *         description: Post creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               $ref: '#/models/post.js'
  *       400:
  *         description: Datos inválidos proporcionados
  *       500:
