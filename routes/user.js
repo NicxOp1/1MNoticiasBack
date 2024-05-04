@@ -116,6 +116,13 @@ function verifyUserRole(req, res, next) {
  *               createdBy:
  *                 type: string
  *                 example: Creador del post
+ *               image:
+ *                type: string
+ *               example: https://example.com/image.jpg
+ *              imageDescription:
+ *               type: string
+ *              example: Descripción de la imagen
+ *    produces:
  *     responses:
  *       201:
  *         description: Post creado exitosamente
@@ -134,7 +141,7 @@ router.post('/'/*, verifyUserRole */, async (req, res) => {
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
             ...req.body,
-            createdBy: req.user.id, // asignar el id del usuario que creó el post
+           /*  createdBy: req.user.id, */ // asignar el id del usuario que creó el post
         });
         // Guardar el nuevo documento Post en la base de datos
         newPost.save()
@@ -338,7 +345,7 @@ router.get('/:id', async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.put('/:id', upload.single('image'), async (req, res) => {
+/* router.put('/:id', upload.single('image'), async (req, res) => {
     try {
         let imageUrl;
         if (req.file) {
@@ -375,7 +382,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     } catch (err) {
         res.status(400).json({ error: err });
     }
-});
+}); */
 
 // Elimina un posteo por id
 /**
