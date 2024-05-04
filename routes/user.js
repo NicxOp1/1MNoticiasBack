@@ -5,20 +5,7 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/user.js');
 const Post = require('../models/post.js'); // Asegúrate de que la ruta al archivo del modelo sea correcta
 const path = require('path');
-const fs = require('node:fs'); // Import the fs module
-/* const upload = multer({ dest: path.join(__dirname, '../assets') }); */
-/* const multer = require('multer'); */
 
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, 'C:\\Users\\Nicolas Lopez\\Desktop\\SCRIPTS\\Black Magic\\1MnoticiasBack\\assets');
-  },
-  filename: function(req, file, cb) {
-    cb(null, file.originalname);
-  }
-});
-
-const upload = multer({ storage: storage });
 
 const router = express.Router();
 
@@ -52,6 +39,29 @@ function verifyAdminRole(req, res, next) {
 
         if (req.userRole !== 'admin') {
             return res.status(403).json({ success: false, message: 'Requires admin role!' });
+        }
+        
+        next();
+    });
+}
+// Middleware para validar el rol de administrador
+function verifyUserRole(req, res, next) {
+    const token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(403).json({ success: false, message: 'No token provided.' });
+    }
+
+    jwt.verify(token, process.env.Token, (err, decoded) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Failed to authenticate token.' });
+        }
+
+        // if everything good, save to request for use in other routes
+        req.userId = decoded.id;
+        req.userRole = decoded.role;
+
+        if (req.userRole !== 'user') {
+            return res.status(403).json({ success: false, message: 'Requires user role!' });
         }
         
         next();
@@ -119,24 +129,13 @@ function verifyAdminRole(req, res, next) {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/',verifyUserRole, async (req, res) => {
     try {
-        console.log('req.body:', req.body); // registrar el cuerpo de la solicitud
-        console.log('req.file:', req.file); // registrar el archivo de la solicitud
-
-        // req.file es el archivo 'image'
-        // req.body contendrá el texto 'title', 'content', etc.
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
             ...req.body,
             createdBy: req.user.id, // asignar el id del usuario que creó el post
-            image: req.file ? req.file.path : null // si se subió una imagen, almacene la ruta de la imagen
         });
-
-        console.log('newPost:', newPost); // registrar el nuevo Post
-
-        saveImage(req.file)
-        console.log(saveImage(req.file))
         // Guardar el nuevo documento Post en la base de datos
         newPost.save()
             .then(() => res.json({ message: 'Post guardado correctamente' }))
@@ -150,11 +149,6 @@ router.post('/', upload.single('image'), async (req, res) => {
         res.status(400).json({ error: "Hay un error con tu peticion" });
     }
 });
-function saveImage(file) {  
-    const newPath = path.join(__dirname, '../assets', file.originalname);
-    fs.renameSync(file.path, newPath);
-    return newPath
-}
 
 
 // Crea un nuevo post
