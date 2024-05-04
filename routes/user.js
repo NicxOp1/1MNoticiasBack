@@ -437,8 +437,8 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Hace un usuario admin
-router.post('/admin',verifyAdminRole,async (req, res) => {
+// crea un usuario admin
+router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
     try {
         const { nombre, apellido, password } = req.body;
 
@@ -547,7 +547,7 @@ router.delete('/:nombre', async (req, res) => {
     }
 });
 
-// Controlador para ingresar
+// Controlador para ingresar y hacer login como usuario
 /**
  * @swagger
  * /usuario/login:
