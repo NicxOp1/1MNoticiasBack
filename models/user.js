@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 /**
  * @swagger
  *  components:
@@ -31,8 +33,6 @@
  *           apellido: Perez
  *           password: miContraseñaSegura
  */
-const mongoose = require('mongoose');
-
 const schema = new mongoose.Schema({
     created_at: {type: Date, required: false},
     updated_at: {type: Date, required: false},

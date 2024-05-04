@@ -53,7 +53,7 @@ const Schema = mongoose.Schema; // Asegúrate de que esta línea esté presente
  *           createdBy: 60d0fe4b6469270015c2e9c1
  *           image: https://example.com/image.jpg
  *           imageDescription: Image description
- */
+
 const PostSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
