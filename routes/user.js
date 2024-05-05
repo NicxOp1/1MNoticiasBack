@@ -705,4 +705,46 @@ router.post('/usuario/admin', verifyAdminRole, validateUserFields, async (req, r
     }
 });
 
+// Obtiene un usuario por id
+/**
+ * @swagger
+ * /user/{userId}:
+ *   get:
+ *     summary: Obtiene un usuario por id
+ *     description: Obtiene un usuario de la base de datos utilizando su id como parámetro.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: Id del usuario a obtener
+ *         schema:
+ *           type: string
+ *     produces:
+ *       - application/json
+ *     responses:
+ *       200:
+ *         description: Usuario obtenido exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Usuario'
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        // Fetch user from database using userId
+        const user = await Usuario.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;
