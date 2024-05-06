@@ -17,6 +17,9 @@ const Schema = mongoose.Schema; // Asegúrate de que esta línea esté presente
  *          title:
  *            type: string
  *            description: The title of the post.
+ *         resumedContent:
+ *           type: string
+ *          description: The resumed content of the post.   
  *          content:
  *            type: string
  *            description: The content of the post.
@@ -45,6 +48,7 @@ const Schema = mongoose.Schema; // Asegúrate de que esta línea esté presente
  *            description: The description of the image.
  *        example:
  *           title: Post Title
+ *          resumedContent: Post Resumed Content
  *           content: Post Content
  *           date_created: 2022-01-01
  *           date_created_gmt: 2022-01-01
@@ -56,6 +60,7 @@ const Schema = mongoose.Schema; // Asegúrate de que esta línea esté presente
  */
 const PostSchema = new mongoose.Schema({
     title: { type: String, required: true },
+    resumedContent: { type: String, required: true},
     content: { type: String, required: true },
     date_created: { type: String, required: true },
     date_created_gmt: { type: String, required: true },

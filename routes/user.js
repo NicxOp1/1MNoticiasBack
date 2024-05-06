@@ -68,6 +68,12 @@ function verifyUserRole(req, res, next) {
     });
 }
 
+
+
+
+
+/* POSTEOS */
+
 // Crea un nuevo post 
 /**
  * @swagger
@@ -141,7 +147,6 @@ router.post('/', verifyUserRole, async (req, res) => {
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
             ...req.body,
-           /*  createdBy: req.user.id, */ // asignar el id del usuario que creó el post
         });
         // Guardar el nuevo documento Post en la base de datos
         newPost.save()
@@ -156,9 +161,7 @@ router.post('/', verifyUserRole, async (req, res) => {
         res.status(400).json({ error: "Hay un error con tu peticion" });
     }
 });
-
-
-// Crea un nuevo post
+// trae todos los posts y se le pueden mandar querys para filtrar
 /**
  * @swagger
  * /post:
@@ -181,8 +184,23 @@ router.post('/', verifyUserRole, async (req, res) => {
  */
 router.get('/', async (req, res) => {
     try {
-        const posts = await Post.find();
-        res.json(posts);
+        if (Object.keys(req.query).length > 0) {
+/*             // Handle filtering logic here
+            // For example, if there is a "category" query parameter
+            // you can filter the posts based on that category
+            if (req.query.category) {
+                const filteredPosts = await Post.find({ category: req.query.category });
+                res.json(filteredPosts);
+            } else {
+                const posts = await Post.find();
+                res.json(posts);
+            } */
+            const filteredPosts = await Post.find(req.query);
+            res.json(filteredPosts);
+        } else {
+            const posts = await Post.find();
+            res.json(posts);
+        }
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -190,7 +208,6 @@ router.get('/', async (req, res) => {
         });
     }
 });
-
 // Obtiene todos los posteos creados por un usuario
 /**
  * @swagger
@@ -231,7 +248,6 @@ router.get('/user/:userId', async (req, res) => {
         });
     }
 });
-
 // Obtiene un posteo por id
 /**
  * @swagger
@@ -281,109 +297,39 @@ router.get('/:id', async (req, res) => {
     }
 });
 // Actualiza un posteo por id
-/**
- * @swagger
- * /post/{id}:
- *   put:
- *     summary: Actualiza un post existente
- *     description: Actualiza un post existente en la base de datos con la información proporcionada. Si se proporciona una nueva imagen, se cargará a S3 y se actualizará la URL de la imagen en la base de datos.
- *     consumes:
- *       - multipart/form-data
- *     produces:
- *       - application/json
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         type: string
- *         description: El ID del post a actualizar.
- *       - in: formData
- *         name: title
- *         type: string
- *         description: El nuevo título del post.
- *       - in: formData
- *         name: content
- *         type: string
- *         description: El nuevo contenido del post.
- *       - in: formData
- *         name: date_created
- *         type: string
- *         description: La nueva fecha de creación del post.
- *       - in: formData
- *         name: date_created_gmt
- *         type: string
- *         description: La nueva fecha de creación del post en GMT.
- *       - in: formData
- *         name: taxonomies
- *         type: array
- *         items:
- *           type: string
- *         description: Las nuevas taxonomías del post.
- *       - in: formData
- *         name: category
- *         type: string
- *         description: La nueva categoría del post.
- *       - in: formData
- *         name: createdBy
- *         type: string
- *         description: El nuevo ID del usuario que creó el post.
- *       - in: formData
- *         name: image
- *         type: file
- *         description: La nueva imagen para el post (opcional).
- *       - in: formData
- *         name: imageDescription
- *         type: string
- *         description: La nueva descripción de la imagen.
- *     responses:
- *       200:
- *         description: Post actualizado exitosamente. Devuelve el post actualizado.
- *       400:
- *         description: Datos inválidos proporcionados
- *       404:
- *         description: No se encontró el post
- *       500:
- *         description: Error interno del servidor
- */
-/* router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', verifyUserRole, async (req, res) => {
     try {
-        let imageUrl;
-        if (req.file) {
-            // Convertir la imagen a Base64
-            const imageBase64 = req.file.buffer.toString('base64');
+        const postId = req.params.id;
+        const userId = req.user.id; // Assuming the user ID is stored in req.user.id from the token
 
-            // Carga al almacenamiento en la nube
-            const params = {
-                Bucket: process.env.AWS_BUCKET_NAME, // Nombre del bucket en S3
-                Key: `${Date.now().toString()}-${req.file.originalname}`, // Nombre del archivo en S3
-                Body: Buffer.from(imageBase64, 'base64'), // Datos de la imagen
-                ContentType: req.file.mimetype, // Tipo de contenido
-                ACL: 'public-read' // Hacer que la imagen sea de lectura pública
-            };
+        // Find the post by ID and user ID
+        const post = await Post.findOne({ _id: postId, createdBy: userId });
 
-            const uploadResponse = await s3.upload(params).promise();
-
-            // Generar URL de la imagen
-            imageUrl = uploadResponse.Location;
+        if (!post) {
+            return res.status(404).json({ message: 'No se encontró el post con el id y usuario dados' });
         }
 
-        // Actualizar el documento Post con los datos del cuerpo de la solicitud
-        const updatedPost = await Post.findByIdAndUpdate(req.params.id, {
-            ...req.body,
-            ...(imageUrl && { image: imageUrl }) // si se subió una imagen, actualice la URL de la imagen
-        }, { new: true }); // { new: true } devuelve el documento actualizado
+        // Update the post with the new data
+        post.title = req.body.title;
+        post.resumedContent = req.body.resumedContent;
+        post.content = req.body.content;
+        post.date_created = req.body.date_created;
+        post.date_created_gmt = req.body.date_created_gmt;
+        post.taxonomies = req.body.taxonomies;
+        post.category = req.body.category;
+        post.image = req.body.image;
+        post.imageDescription = req.body.imageDescription;
 
-        if (!updatedPost) {
-            return res.status(404).json({ message: 'No se encontró el post con el id dado' });
-        }
+        // Save the updated post
+        await post.save();
 
-        res.json({ message: 'Post actualizado correctamente', post: updatedPost });
+        res.json({ message: 'Post actualizado correctamente', post });
 
     } catch (err) {
-        res.status(400).json({ error: err });
+        console.log('Error en el controlador:', err); // registrar el error
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
-}); */
-
+});
 // Elimina un posteo por id
 /**
  * @swagger
@@ -437,6 +383,9 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+
+/* USUARIOS */
+
 // crea un usuario admin
 router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
     try {
@@ -473,7 +422,7 @@ router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
     }
 });
 //editar user segun nombre
-router.put('/:nombre', async (req, res) => {
+router.put('/:nombre',verifyAdminRole , async (req, res) => {
     try {
         const user = await Usuario.findOneAndUpdate(
             { nombre: req.params.nombre },
@@ -500,7 +449,6 @@ router.put('/:nombre', async (req, res) => {
         });
     }
 });
-
 // Elimina un usuario por nombre
 /**
  * @swagger
@@ -525,7 +473,7 @@ router.put('/:nombre', async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete('/:nombre', async (req, res) => {
+router.delete('/:nombre',verifyAdminRole , async (req, res) => {
     try {
         const user = await Usuario.findOneAndDelete({ nombre: req.params.nombre });
 
@@ -547,7 +495,6 @@ router.delete('/:nombre', async (req, res) => {
         });
     }
 });
-
 // Controlador para ingresar y hacer login como usuario
 /**
  * @swagger
@@ -637,7 +584,6 @@ router.post('/login', async (req, res) => {
         });
     }
 });
-
 // controlador para crear un nuevo usuario como administrador
 /**
  * @swagger
@@ -704,7 +650,6 @@ router.post('/usuario/admin', verifyAdminRole, validateUserFields, async (req, r
         });
     }
 });
-
 // Obtiene un usuario por id
 /**
  * @swagger
