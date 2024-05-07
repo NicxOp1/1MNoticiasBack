@@ -9,7 +9,8 @@ const path = require('path');
 
 const router = express.Router();
 
-// Middleware para validar los campos requeridos
+// Middlewares
+
 function validateUserFields(req, res, next) {
     if (!req.body.nombre || !req.body.apellido || !req.body.password) {
         return res.status(400).json({
@@ -20,8 +21,6 @@ function validateUserFields(req, res, next) {
 
     next();
 }
-
-
 function verifyAdminRole(req, res, next) {
     const token = req.headers['x-access-token'];
     if (!token) {
@@ -44,7 +43,6 @@ function verifyAdminRole(req, res, next) {
         next();
     });
 }
-// Middleware para validar el rol de administrador
 function verifyUserRole(req, res, next) {
     const token = req.headers['x-access-token'];
     if (!token) {
@@ -61,6 +59,9 @@ function verifyUserRole(req, res, next) {
         req.userRole = decoded.role;
 
         if (req.userRole !== 'user') {
+            return res.status(403).json({ success: false, message: 'Requires user role!' });
+        }
+        else if (req.userRole !== 'admin') {
             return res.status(403).json({ success: false, message: 'Requires user role!' });
         }
         
@@ -142,7 +143,7 @@ function verifyUserRole(req, res, next) {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/', verifyUserRole, async (req, res) => {
+router.post('/', verifyUserRole , async (req, res) => {
     try {
         // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
         const newPost = new Post({
@@ -354,35 +355,29 @@ router.put('/:id', verifyUserRole, async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verifyAdminRole, async (req, res) => {
     try {
-        const post = await Post.findById(req.params.id);
+        const post = await Post.findByIdAndDelete(req.params.id);
 
         if (!post) {
             return res.status(404).json({
                 success: false,
                 message: 'Post not found'
             });
-        }
-
-        // Check if the user is the owner of the post
-        if (req.userRole === 'admin' || post.createdBy.toString() === req.userId) {
-            await post.remove();
-            res.json({ success: true, message: 'Post deleted successfully' });
         } else {
-            res.status(403).json({
-                success: false,
-                message: 'You are not authorized to delete this post'
+            res.status(200).json({ 
+                success: true, 
+                message: 'Post deleted successfully' 
             });
         }
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
             message: 'An error occurred while deleting the post'
         });
     }
 });
-
 
 /* USUARIOS */
 
