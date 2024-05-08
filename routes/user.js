@@ -298,7 +298,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', verifyUserRole, async (req, res) => {
     try {
         const postId = req.params.id;
-        const userId = req.user.id; // Assuming the user ID is stored in req.user.id from the token
+        const userId = req.userId; // Use req.userId instead of req.user.id
 
         // Find the post by ID and user ID
         const post = await Post.findOne({ _id: postId, createdBy: userId });
