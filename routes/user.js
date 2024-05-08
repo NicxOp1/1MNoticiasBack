@@ -58,11 +58,8 @@ function verifyUserRole(req, res, next) {
         req.userId = decoded.id;
         req.userRole = decoded.role;
 
-        if (req.userRole !== 'user') {
-            return res.status(403).json({ success: false, message: 'Requires user role!' });
-        }
-        else if (req.userRole !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Requires user role!' });
+        if (req.userRole !== 'user' && req.userRole !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Requires user or admin role!' });
         }
         
         next();
