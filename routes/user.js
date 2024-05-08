@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/user.js');
 const Post = require('../models/post.js'); // Asegúrate de que la ruta al archivo del modelo sea correcta
 const path = require('path');
-
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
@@ -670,18 +670,20 @@ router.post('/usuario/admin', verifyAdminRole, validateUserFields, async (req, r
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/user/:userId', async (req, res) => {
+router.get('/usuario/:id', async (req, res) => {
     try {
-        const userId = req.params.userId;
-        // Fetch user from database using userId
-        const user = await Usuario.findById(userId);
+        const id = req.params.id;
+        console.log(Usuario)
+        const user = await Usuario.findById(id);
+        console.log(user,"user")
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
         res.json(user);
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(error); // Imprime el error en la consola
+        res.status(500).json({ error: error.message }); // Envía el mensaje de error en la respuesta
     }
 });
-
 module.exports = router;
