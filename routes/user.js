@@ -352,7 +352,7 @@ router.put('/:id', verifyUserRole, async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete('/:id',verifyAdminRole, async (req, res) => {
+router.delete('/:id',verifyUserRole, async (req, res) => {
     try {
         const post = await Post.findByIdAndDelete(req.params.id);
 
