@@ -1,78 +1,87 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const multer = require('multer');
-const jwt = require('jsonwebtoken');
-const Usuario = require('../models/user.js');
-const Post = require('../models/post.js'); // Asegúrate de que la ruta al archivo del modelo sea correcta
-const path = require('path');
-const mongoose = require('mongoose');
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const multer = require("multer");
+const jwt = require("jsonwebtoken");
+const Usuario = require("../models/user.js");
+const Post = require("../models/post.js"); 
+const Ads = require("../models/ads.js")
+const path = require("path");
+const mongoose = require("mongoose");
 
 const router = express.Router();
 
 // Middlewares
 
 function validateUserFields(req, res, next) {
-    if (!req.body.nombre || !req.body.apellido || !req.body.password) {
-        return res.status(400).json({
-            success: false,
-            message: 'Nombre, apellido and password are required'
-        });
+  if (!req.body.nombre || !req.body.apellido || !req.body.password) {
+    return res.status(400).json({
+      success: false,
+      message: "Nombre, apellido and password are required",
+    });
+  }
+
+  next();
+}
+function verifyAdminRole(req, res, next) {
+  const token = req.headers["x-access-token"];
+  if (!token) {
+    return res
+      .status(403)
+      .json({ success: false, message: "No token provided." });
+  }
+
+  jwt.verify(token, process.env.Token, (err, decoded) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to authenticate token." });
+    }
+
+    // if everything good, save to request for use in other routes
+    req.userId = decoded.id;
+    req.userRole = decoded.role;
+
+    if (req.userRole !== "admin") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Requires admin role!" });
     }
 
     next();
-}
-function verifyAdminRole(req, res, next) {
-    const token = req.headers['x-access-token'];
-    if (!token) {
-        return res.status(403).json({ success: false, message: 'No token provided.' });
-    }
-
-    jwt.verify(token, process.env.Token, (err, decoded) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Failed to authenticate token.' });
-        }
-
-        // if everything good, save to request for use in other routes
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
-
-        if (req.userRole !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Requires admin role!' });
-        }
-        
-        next();
-    });
+  });
 }
 function verifyUserRole(req, res, next) {
-    const token = req.headers['x-access-token'];
-    if (!token) {
-        return res.status(403).json({ success: false, message: 'No token provided.' });
+  const token = req.headers["x-access-token"];
+  if (!token) {
+    return res
+      .status(403)
+      .json({ success: false, message: "No token provided." });
+  }
+
+  jwt.verify(token, process.env.Token, (err, decoded) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to authenticate token." });
     }
 
-    jwt.verify(token, process.env.Token, (err, decoded) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Failed to authenticate token.' });
-        }
+    // if everything good, save to request for use in other routes
+    req.userId = decoded.id;
+    req.userRole = decoded.role;
 
-        // if everything good, save to request for use in other routes
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
+    if (req.userRole !== "user" && req.userRole !== "admin") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Requires user or admin role!" });
+    }
 
-        if (req.userRole !== 'user' && req.userRole !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Requires user or admin role!' });
-        }
-        
-        next();
-    });
+    next();
+  });
 }
-
-
-
-
 
 /* POSTEOS */
 
-// Crea un nuevo post 
+// Crea un nuevo post
 /**
  * @swagger
  * /:
@@ -140,24 +149,28 @@ function verifyUserRole(req, res, next) {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/', verifyUserRole , async (req, res) => {
-    try {
-        // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
-        const newPost = new Post({
-            ...req.body,
-        });
-        // Guardar el nuevo documento Post en la base de datos
-        newPost.save()
-            .then(() => res.json({ message: 'Post guardado correctamente' }))
-            .catch(err => {
-                console.log('Error al guardar el Post:', err); // registrar el error
-                res.status(400).json({ error: "el post no pudo guardarse por algun problema del servidor" });
-            });
-
-    } catch (err) {
-        console.log('Error en el controlador:', err); // registrar el error
-        res.status(400).json({ error: "Hay un error con tu peticion" });
-    }
+router.post("/", verifyUserRole, async (req, res) => {
+  try {
+    // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
+    const newPost = new Post({
+      ...req.body,
+    });
+    // Guardar el nuevo documento Post en la base de datos
+    newPost
+      .save()
+      .then(() => res.json({ message: "Post guardado correctamente" }))
+      .catch((err) => {
+        console.log("Error al guardar el Post:", err); // registrar el error
+        res
+          .status(400)
+          .json({
+            error: "el post no pudo guardarse por algun problema del servidor",
+          });
+      });
+  } catch (err) {
+    console.log("Error en el controlador:", err); // registrar el error
+    res.status(400).json({ error: "Hay un error con tu peticion" });
+  }
 });
 // trae todos los posts y se le pueden mandar querys para filtrar
 /**
@@ -180,10 +193,10 @@ router.post('/', verifyUserRole , async (req, res) => {
  *         name: content
  *
  */
-router.get('/', async (req, res) => {
-    try {
-        if (Object.keys(req.query).length > 0) {
-/*             // Handle filtering logic here
+router.get("/", async (req, res) => {
+  try {
+    if (Object.keys(req.query).length > 0) {
+      /*             // Handle filtering logic here
             // For example, if there is a "category" query parameter
             // you can filter the posts based on that category
             if (req.query.category) {
@@ -193,18 +206,18 @@ router.get('/', async (req, res) => {
                 const posts = await Post.find();
                 res.json(posts);
             } */
-            const filteredPosts = await Post.find(req.query);
-            res.json(filteredPosts);
-        } else {
-            const posts = await Post.find();
-            res.json(posts);
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while fetching the posts'
-        });
+      const filteredPosts = await Post.find(req.query);
+      res.json(filteredPosts);
+    } else {
+      const posts = await Post.find();
+      res.json(posts);
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the posts",
+    });
+  }
 });
 // Obtiene todos los posteos creados por un usuario
 /**
@@ -234,17 +247,17 @@ router.get('/', async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/user/:userId', async (req, res) => {
-    try {
-        const posts = await Post.find({ createdBy: req.params.userId });
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const posts = await Post.find({ createdBy: req.params.userId });
 
-        res.json(posts);
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while fetching the posts'
-        });
-    }
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the posts",
+    });
+  }
 });
 // Obtiene un posteo por id
 /**
@@ -275,58 +288,93 @@ router.get('/user/:userId', async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/:id', async (req, res) => {
-    try {
-        const post = await Post.findById(req.params.id);
+router.get("/:id", async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
 
-        if (post) {
-            res.json(post);
-        } else {
-            res.status(404).json({
-                success: false,
-                message: 'Post not found'
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while fetching the post'
-        });
+    if (post) {
+      res.json(post);
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the post",
+    });
+  }
 });
 // Actualiza un posteo por id
-router.put('/:id', verifyUserRole, async (req, res) => {
-    try {
-        const postId = req.params.id;
-        const userId = req.userId; // Use req.userId instead of req.user.id
+router.put("/:id", verifyUserRole, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.userId; // Use req.userId instead of req.user.id
 
-        // Find the post by ID and user ID
-        const post = await Post.findOne({ _id: postId, createdBy: userId });
+    // Find the post by ID and user ID
+    const post = await Post.findOne({ _id: postId, createdBy: userId });
 
-        if (!post) {
-            return res.status(404).json({ message: 'No se encontró el post con el id y usuario dados' });
-        }
-
-        // Update the post with the new data
-        post.title = req.body.title;
-        post.resumedContent = req.body.resumedContent;
-        post.content = req.body.content;
-        post.date_created = req.body.date_created;
-        post.date_created_gmt = req.body.date_created_gmt;
-        post.taxonomies = req.body.taxonomies;
-        post.category = req.body.category;
-        post.image = req.body.image;
-        post.imageDescription = req.body.imageDescription;
-
-        // Save the updated post
-        await post.save();
-
-        res.json({ message: 'Post actualizado correctamente', post });
-
-    } catch (err) {
-        console.log('Error en el controlador:', err); // registrar el error
-        res.status(500).json({ error: 'Error interno del servidor' });
+    if (!post) {
+      return res
+        .status(404)
+        .json({ message: "No se encontró el post con el id y usuario dados" });
     }
+
+    // Update the post with the new data
+    post.title = req.body.title;
+    post.resumedContent = req.body.resumedContent;
+    post.content = req.body.content;
+    post.date_created = req.body.date_created;
+    post.date_created_gmt = req.body.date_created_gmt;
+    post.taxonomies = req.body.taxonomies;
+    post.category = req.body.category;
+    post.image = req.body.image;
+    post.imageDescription = req.body.imageDescription;
+
+    // Save the updated post
+    await post.save();
+
+    res.json({ message: "Post actualizado correctamente", post });
+  } catch (err) {
+    console.log("Error en el controlador:", err); // registrar el error
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+// Actualiza un posteo por id sin verificar el rol siendo admin
+router.put("/:id", verifyAdminRole, async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    // Find the post by ID and user ID
+    const post = await Post.findOne({ _id: postId });
+
+    if (!post) {
+      return res
+        .status(404)
+        .json({ message: "No se encontró el post con el id y usuario dados" });
+    }
+
+    // Update the post with the new data
+    post.title = req.body.title;
+    post.resumedContent = req.body.resumedContent;
+    post.content = req.body.content;
+    post.date_created = req.body.date_created;
+    post.date_created_gmt = req.body.date_created_gmt;
+    post.taxonomies = req.body.taxonomies;
+    post.category = req.body.category;
+    post.image = req.body.image;
+    post.imageDescription = req.body.imageDescription;
+
+    // Save the updated post
+    await post.save();
+
+    res.json({ message: "Post actualizado correctamente", post });
+  } catch (err) {
+    console.log("Error en el controlador:", err); // registrar el error
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 // Elimina un posteo por id
 /**
@@ -352,94 +400,103 @@ router.put('/:id', verifyUserRole, async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete('/:id',verifyUserRole, async (req, res) => {
-    try {
-        const post = await Post.findByIdAndDelete(req.params.id);
+router.delete("/:id", verifyUserRole, async (req, res) => {
+  try {
+    const post = await Post.findByIdAndDelete(req.params.id);
 
-        if (!post) {
-            return res.status(404).json({
-                success: false,
-                message: 'Post not found'
-            });
-        } else {
-            res.status(200).json({ 
-                success: true, 
-                message: 'Post deleted successfully' 
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while deleting the post'
-        });
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Post deleted successfully",
+      });
     }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting the post",
+    });
+  }
 });
 
 /* USUARIOS */
 
 // crea un usuario admin
-router.post('/admin',/* verifyAdminRole ,*/async (req, res) => {
+router.post(
+  "/admin",
+  /* verifyAdminRole ,*/ async (req, res) => {
     try {
-        const { nombre, apellido, password, role } = req.body;
+      const { nombre, apellido, password, role } = req.body;
 
-        // Check if user already exists
-        const existingUser = await Usuario.findOne({ nombre });
-        if (existingUser) {
-            return res.status(400).json({ message: 'El usuario ya existe' });
-        }
+      // Check if user already exists
+      const existingUser = await Usuario.findOne({ nombre });
+      if (existingUser) {
+        return res.status(400).json({ message: "El usuario ya existe" });
+      }
 
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+      // Hash the password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create a new admin user
-        const newAdmin = new Usuario({
-            nombre,
-            apellido,
-            password: hashedPassword,
-            role
-        });
+      // Create a new admin user
+      const newAdmin = new Usuario({
+        nombre,
+        apellido,
+        password: hashedPassword,
+        role,
+      });
 
-        // Save the new admin user to the database
-        await newAdmin.save();
+      // Save the new admin user to the database
+      await newAdmin.save();
 
-        // Generate a token for the admin user
-        const token = jwt.sign({ id: newAdmin._id, role: role }, process.env.Token, { expiresIn: '1d' });
+      // Generate a token for the admin user
+      const token = jwt.sign(
+        { id: newAdmin._id, role: role },
+        process.env.Token,
+        { expiresIn: "1d" }
+      );
 
-        res.status(201).json({ message: 'Usuario admin creado exitosamente', token });
+      res
+        .status(201)
+        .json({ message: "Usuario admin creado exitosamente", token });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error interno del servidor' });
+      console.error(error);
+      res.status(500).json({ message: "Error interno del servidor" });
     }
-});
+  }
+);
 //editar user segun nombre
-router.put('/:nombre',verifyAdminRole , async (req, res) => {
-    try {
-        const user = await Usuario.findOneAndUpdate(
-            { nombre: req.params.nombre },
-            { ...req.body, updated_at: Date.now() },
-            { new: true }
-        );
+router.put("/:nombre", verifyAdminRole, async (req, res) => {
+  try {
+    const user = await Usuario.findOneAndUpdate(
+      { nombre: req.params.nombre },
+      { ...req.body, updated_at: Date.now() },
+      { new: true }
+    );
 
-        if (user) {
-            res.status(200).json({
-                success: true,
-                message: 'User updated successfully',
-                user
-            });
-        } else {
-            res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while updating the user'
-        });
+    if (user) {
+      res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+        user,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while updating the user",
+    });
+  }
 });
 // Elimina un usuario por nombre
 /**
@@ -465,27 +522,27 @@ router.put('/:nombre',verifyAdminRole , async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete('/:nombre',verifyAdminRole , async (req, res) => {
-    try {
-        const user = await Usuario.findOneAndDelete({ nombre: req.params.nombre });
+router.delete("/:nombre", verifyAdminRole, async (req, res) => {
+  try {
+    const user = await Usuario.findOneAndDelete({ nombre: req.params.nombre });
 
-        if (user) {
-            res.status(200).json({
-                success: true,
-                message: 'User deleted successfully'
-            });
-        } else {
-            res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while deleting the user'
-        });
+    if (user) {
+      res.status(200).json({
+        success: true,
+        message: "User deleted successfully",
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting the user",
+    });
+  }
 });
 // Controlador para ingresar y hacer login como usuario
 /**
@@ -540,41 +597,45 @@ router.delete('/:nombre',verifyAdminRole , async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/login', async (req, res) => {
-    try {
-        // Comprueba si el nombre está presente
-        if (!req.body.nombre || !req.body.password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Nombre and password are required'
-            });
-        }
-
-        // Busca el usuario en la base de datos
-        const user = await Usuario.findOne({ nombre: req.body.nombre });
-
-        // Comprueba si el usuario existe y si la contraseña es correcta
-        if (user && bcrypt.compareSync(req.body.password, user.password)) {
-            // Crea un token con el rol del usuario
-            const token = jwt.sign({ id: user._id, role: user.role }, process.env.Token, { expiresIn: '1d' });
-
-            res.status(200).json({
-                success: true,
-                message: 'Login successful',
-                token
-            });
-        } else {
-            res.status(401).json({
-                success: false,
-                message: 'Invalid nombre or password'
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while logging in'
-        });
+router.post("/login", async (req, res) => {
+  try {
+    // Comprueba si el nombre está presente
+    if (!req.body.nombre || !req.body.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Nombre and password are required",
+      });
     }
+
+    // Busca el usuario en la base de datos
+    const user = await Usuario.findOne({ nombre: req.body.nombre });
+
+    // Comprueba si el usuario existe y si la contraseña es correcta
+    if (user && bcrypt.compareSync(req.body.password, user.password)) {
+      // Crea un token con el rol del usuario
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.Token,
+        { expiresIn: "1d" }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
+        token,
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        message: "Invalid nombre or password",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while logging in",
+    });
+  }
 });
 // controlador para crear un nuevo usuario como administrador
 /**
@@ -617,31 +678,36 @@ router.post('/login', async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.post('/usuario/admin', verifyAdminRole, validateUserFields, async (req, res) => {
+router.post(
+  "/usuario/admin",
+  verifyAdminRole,
+  validateUserFields,
+  async (req, res) => {
     try {
-        const newUser = new Usuario({
-            created_at: Date.now(),
-            updated_at: null,
-            nombre: req.body.nombre,
-            apellido: req.body.apellido,
-            password: bcrypt.hashSync(req.body.password, 8),
-            role: req.body.role
-        });
+      const newUser = new Usuario({
+        created_at: Date.now(),
+        updated_at: null,
+        nombre: req.body.nombre,
+        apellido: req.body.apellido,
+        password: bcrypt.hashSync(req.body.password, 8),
+        role: req.body.role,
+      });
 
-        const user = await newUser.save();
+      const user = await newUser.save();
 
-        res.status(201).json({
-            success: true,
-            message: 'User created successfully',
-            user
-        });
+      res.status(201).json({
+        success: true,
+        message: "User created successfully",
+        user,
+      });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while creating the user'
-        });
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while creating the user",
+      });
     }
-});
+  }
+);
 // Obtiene un usuario por id
 /**
  * @swagger
@@ -670,20 +736,138 @@ router.post('/usuario/admin', verifyAdminRole, validateUserFields, async (req, r
  *       500:
  *         description: Error interno del servidor
  */
-router.get('/usuario/:id', async (req, res) => {
+router.get("/usuario/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    console.log(Usuario);
+    const user = await Usuario.findById(id);
+    console.log(user, "user");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error(error); // Imprime el error en la consola
+    res.status(500).json({ error: error.message }); // Envía el mensaje de error en la respuesta
+  }
+});
+
+/* Publicidades */
+
+//Crea una publicidad
+router.post("/publicidad", verifyUserRole, async (req, res) => {
+  try {
+    // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
+    const newAds = new Ads({
+      ...req.body,
+      createdBy:userId
+    });
+    // Guardar el nuevo documento Post en la base de datos
+    newAds
+      .save()
+      .then(() => res.json({ message: "AD guardada correctamente" }))
+      .catch((err) => {
+        console.log("Error al guardar el AD:", err); // registrar el error
+        res
+          .status(400)
+          .json({
+            error: "el AD no pudo guardarse por algun problema del servidor",
+          });
+      });
+  } catch (err) {
+    console.log("Error en el controlador:", err); // registrar el error
+    res.status(400).json({ error: "Hay un error con tu peticion" });
+  }
+});
+
+// Obtiene todas las ads creadas por un usuario
+router.get("/publicidad/:userId", async (req, res) => {
     try {
-        const id = req.params.id;
-        console.log(Usuario)
-        const user = await Usuario.findById(id);
-        console.log(user,"user")
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+      const ads = await Ads.find({ createdBy: req.params.userId });
+  
+      res.json(ads);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while fetching the posts",
+      });
+    }
+  });
+
+// Actualiza un ad por id
+router.put("/publicidad/:id", verifyUserRole, async (req, res) => {
+    try {
+      const adsId = req.params.id;
+      const userId = req.userId; // Use req.userId instead of req.user.id
+      const userRole = req.userRole;
+      console.log(userRole,"rol")
+        if(userRole==="admin"){
+            const ads = await Ads.findOne({ _id: adsId});
+            if (!ads) {
+                return res
+                  .status(404)
+                  .json({ message: "No se encontró el post con el id y usuario dados" });
+              }
+                    // Update the post with the new data
+      ads.ad = req.body.ad;
+      ads.alt = req.body.alt;
+      ads.position = req.body.position;
+      ads.updated_at = Date.now()
+  
+      // Save the updated ads
+      await ads.save();
+  
+      res.json({ message: "El ad fue actualizado correctamente", ads });
+        }else if(userRole==="user"){
+            // Find the post by ID and user ID
+            const ads = await Ads.findOne({ _id: adsId, createdBy: userId });
+            if (!ads) {
+                return res
+                  .status(404)
+                  .json({ message: "No se encontró el post con el id y usuario dados" });
+              }
+                    // Update the post with the new data
+      ads.ad = req.body.ad;
+      ads.alt = req.body.alt;
+      ads.position = req.body.position;
+      ads.updated_at = Date.now()
+  
+      // Save the updated ads
+      await ads.save();
+  
+      res.json({ message: "El ad fue actualizado correctamente", ads });
         }
 
-        res.json(user);
-    } catch (error) {
-        console.error(error); // Imprime el error en la consola
-        res.status(500).json({ error: error.message }); // Envía el mensaje de error en la respuesta
+    } catch (err) {
+      console.log("Error en el controlador:", err); // registrar el error
+      res.status(500).json({ error: "Error interno del servidor" });
     }
-});
+  });
+
+// Elimina un ad por id
+router.delete("/publicidad/:id", verifyUserRole, async (req, res) => {
+    try {
+      const ads = await Ads.findByIdAndDelete(req.params.id);
+  
+      if (!ads) {
+        return res.status(404).json({
+          success: false,
+          message: "Ad not found",
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          message: "Ad deleted successfully",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while deleting the Ad",
+      });
+    }
+  });
+
 module.exports = router;
