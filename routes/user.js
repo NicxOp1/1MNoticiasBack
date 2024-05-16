@@ -761,7 +761,6 @@ router.post("/publicidad", verifyUserRole, async (req, res) => {
     // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
     const newAds = new Ads({
       ...req.body,
-      createdBy:userId
     });
     // Guardar el nuevo documento Post en la base de datos
     newAds
@@ -778,6 +777,61 @@ router.post("/publicidad", verifyUserRole, async (req, res) => {
   } catch (err) {
     console.log("Error en el controlador:", err); // registrar el error
     res.status(400).json({ error: "Hay un error con tu peticion" });
+  }
+});
+
+//obtiene todas las publicidades
+router.get("/publicidad", async (req, res) => {
+  try {
+/*     console.log("hola")
+    let query = {}; // Inicializar objeto de consulta vacío
+
+    // Verificar si hay parámetros de consulta
+    if (Object.keys(req.query).length > 0) {
+      // Validar los parámetros de consulta
+      const allowedParams = ["created_at", "updated_at", "ad", "alt", "position", "createdBy"];
+      for (const key in req.query) {
+        if (allowedParams.includes(key)) {
+          query[key] = req.query[key];
+        }
+      }
+    }
+ */
+/*     // Realizar la consulta con los parámetros validados
+    const ads = await Ads.find();
+    res.json(ads); */
+  } catch (err) {
+    console.log("Error fetching ads:", err);
+    console.log(err, "err")
+    // Registrar el error en la consola
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the posts. Please check server logs for more information.",
+    });
+  }
+});
+/* router.get("/",async(req, res)=>{
+  try{
+    const ads = await Ads.find();
+    res.json(ads)
+  }catch(error){
+    res.status(500).json({
+      success:false,
+      message: "An error occurred while fetching the posts"
+    })
+  }
+}); */
+
+//Obtiene la publicidad por id 
+router.get("/publicidad/:id", async (req, res) => {
+  try {
+    const ads = await Ads.findById(req.params.id)
+    res.json(ads);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the posts1",
+    });
   }
 });
 
