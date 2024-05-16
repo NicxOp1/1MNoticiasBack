@@ -215,7 +215,7 @@ router.get("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the posts",
+      message: "An error occurred while fetching the posts1",
     });
   }
 });
@@ -255,7 +255,7 @@ router.get("/user/:userId", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the posts",
+      message: "An error occurred while fetching the posts2",
     });
   }
 });
@@ -288,7 +288,7 @@ router.get("/user/:userId", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.get("/:id", async (req, res) => {
+router.get("/user/post/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -303,7 +303,7 @@ router.get("/:id", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the post",
+      message: "An error occurred while fetching the post3",
     });
   }
 });
@@ -781,9 +781,11 @@ router.post("/publicidad", verifyUserRole, async (req, res) => {
 });
 
 //obtiene todas las publicidades
-router.get("/publicidad", async (req, res) => {
+router.get("/publicidades", async (req, res) => {
   try {
-/*     console.log("hola")
+    console.log("Iniciando la solicitud /publicidad");
+    console.log("Parámetros de consulta:", req.query);
+    
     let query = {}; // Inicializar objeto de consulta vacío
 
     // Verificar si hay parámetros de consulta
@@ -793,20 +795,26 @@ router.get("/publicidad", async (req, res) => {
       for (const key in req.query) {
         if (allowedParams.includes(key)) {
           query[key] = req.query[key];
+        } else {
+          console.log(`Parámetro no permitido: ${key}`);
         }
       }
     }
- */
-/*     // Realizar la consulta con los parámetros validados
-    const ads = await Ads.find();
-    res.json(ads); */
+
+    // Realizar la consulta con los parámetros validados
+    console.log("Consulta a la base de datos con:", query);
+    const ads = await Ads.find(query);
+    console.log("Resultados de la consulta:", ads);
+    
+    res.status(200).json({
+      success: true,
+      message: ads
+    });
   } catch (err) {
-    console.log("Error fetching ads:", err);
-    console.log(err, "err")
-    // Registrar el error en la consola
+    console.log("Error al obtener los anuncios:", err);
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the posts. Please check server logs for more information.",
+      message: "An error occurred while fetching the posts4. Please check server logs for more information.",
     });
   }
 });
@@ -830,13 +838,13 @@ router.get("/publicidad/:id", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the posts1",
+      message: "An error occurred while fetching the posts5",
     });
   }
 });
 
 // Obtiene todas las ads creadas por un usuario
-router.get("/publicidad/:userId", async (req, res) => {
+router.get("/publicidad/by/:userId", async (req, res) => {
     try {
       const ads = await Ads.find({ createdBy: req.params.userId });
   
@@ -844,7 +852,7 @@ router.get("/publicidad/:userId", async (req, res) => {
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: "An error occurred while fetching the posts",
+        message: "An error occurred while fetching the posts6",
       });
     }
   });
