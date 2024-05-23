@@ -40,6 +40,7 @@ const mongoose = require('mongoose');
 const schema = new mongoose.Schema({
     created_at: {type: Date, required: false},
     updated_at: {type: Date, required: false},
+    profileImage:{type: String, required: false},
     nombre: {type: String, required: true},
     apellido: {type: String, required: true},
     password: {type: String, required: true},

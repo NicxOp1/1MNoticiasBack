@@ -3,8 +3,8 @@ const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
 const Usuario = require("../models/user.js");
-const Post = require("../models/post.js"); 
-const Ads = require("../models/ads.js")
+const Post = require("../models/post.js");
+const Ads = require("../models/ads.js");
 const path = require("path");
 const mongoose = require("mongoose");
 
@@ -161,11 +161,9 @@ router.post("/", verifyUserRole, async (req, res) => {
       .then(() => res.json({ message: "Post guardado correctamente" }))
       .catch((err) => {
         console.log("Error al guardar el Post:", err); // registrar el error
-        res
-          .status(400)
-          .json({
-            error: "el post no pudo guardarse por algun problema del servidor",
-          });
+        res.status(400).json({
+          error: "el post no pudo guardarse por algun problema del servidor",
+        });
       });
   } catch (err) {
     console.log("Error en el controlador:", err); // registrar el error
@@ -196,16 +194,6 @@ router.post("/", verifyUserRole, async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     if (Object.keys(req.query).length > 0) {
-      /*             // Handle filtering logic here
-            // For example, if there is a "category" query parameter
-            // you can filter the posts based on that category
-            if (req.query.category) {
-                const filteredPosts = await Post.find({ category: req.query.category });
-                res.json(filteredPosts);
-            } else {
-                const posts = await Post.find();
-                res.json(posts);
-            } */
       const filteredPosts = await Post.find(req.query);
       res.json(filteredPosts);
     } else {
@@ -445,6 +433,7 @@ router.post(
 
       // Create a new admin user
       const newAdmin = new Usuario({
+        profileImage,
         nombre,
         apellido,
         password: hashedPassword,
@@ -687,6 +676,7 @@ router.post(
       const newUser = new Usuario({
         created_at: Date.now(),
         updated_at: null,
+        profileImage: req.body.profileImage,
         nombre: req.body.nombre,
         apellido: req.body.apellido,
         password: bcrypt.hashSync(req.body.password, 8),
@@ -768,11 +758,9 @@ router.post("/publicidad", verifyUserRole, async (req, res) => {
       .then(() => res.json({ message: "AD guardada correctamente" }))
       .catch((err) => {
         console.log("Error al guardar el AD:", err); // registrar el error
-        res
-          .status(400)
-          .json({
-            error: "el AD no pudo guardarse por algun problema del servidor",
-          });
+        res.status(400).json({
+          error: "el AD no pudo guardarse por algun problema del servidor",
+        });
       });
   } catch (err) {
     console.log("Error en el controlador:", err); // registrar el error
@@ -785,13 +773,20 @@ router.get("/publicidades", async (req, res) => {
   try {
     console.log("Iniciando la solicitud /publicidad");
     console.log("Parámetros de consulta:", req.query);
-    
+
     let query = {}; // Inicializar objeto de consulta vacío
 
     // Verificar si hay parámetros de consulta
     if (Object.keys(req.query).length > 0) {
       // Validar los parámetros de consulta
-      const allowedParams = ["created_at", "updated_at", "ad", "alt", "position", "createdBy"];
+      const allowedParams = [
+        "created_at",
+        "updated_at",
+        "ad",
+        "alt",
+        "position",
+        "createdBy",
+      ];
       for (const key in req.query) {
         if (allowedParams.includes(key)) {
           query[key] = req.query[key];
@@ -805,16 +800,17 @@ router.get("/publicidades", async (req, res) => {
     console.log("Consulta a la base de datos con:", query);
     const ads = await Ads.find(query);
     console.log("Resultados de la consulta:", ads);
-    
+
     res.status(200).json({
       success: true,
-      message: ads
+      message: ads,
     });
   } catch (err) {
     console.log("Error al obtener los anuncios:", err);
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the posts4. Please check server logs for more information.",
+      message:
+        "An error occurred while fetching the posts4. Please check server logs for more information.",
     });
   }
 });
@@ -830,10 +826,10 @@ router.get("/publicidades", async (req, res) => {
   }
 }); */
 
-//Obtiene la publicidad por id 
+//Obtiene la publicidad por id
 router.get("/publicidad/:id", async (req, res) => {
   try {
-    const ads = await Ads.findById(req.params.id)
+    const ads = await Ads.findById(req.params.id);
     res.json(ads);
   } catch (error) {
     res.status(500).json({
@@ -845,91 +841,94 @@ router.get("/publicidad/:id", async (req, res) => {
 
 // Obtiene todas las ads creadas por un usuario
 router.get("/publicidad/by/:userId", async (req, res) => {
-    try {
-      const ads = await Ads.find({ createdBy: req.params.userId });
-  
-      res.json(ads);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "An error occurred while fetching the posts6",
-      });
-    }
-  });
+  try {
+    const ads = await Ads.find({ createdBy: req.params.userId });
+
+    res.json(ads);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the posts6",
+    });
+  }
+});
 
 // Actualiza un ad por id
 router.put("/publicidad/:id", verifyUserRole, async (req, res) => {
-    try {
-      const adsId = req.params.id;
-      const userId = req.userId; // Use req.userId instead of req.user.id
-      const userRole = req.userRole;
-      console.log(userRole,"rol")
-        if(userRole==="admin"){
-            const ads = await Ads.findOne({ _id: adsId});
-            if (!ads) {
-                return res
-                  .status(404)
-                  .json({ message: "No se encontró el post con el id y usuario dados" });
-              }
-                    // Update the post with the new data
+  try {
+    const adsId = req.params.id;
+    const userId = req.userId; // Use req.userId instead of req.user.id
+    const userRole = req.userRole;
+    console.log(userRole, "rol");
+    if (userRole === "admin") {
+      const ads = await Ads.findOne({ _id: adsId });
+      if (!ads) {
+        return res
+          .status(404)
+          .json({
+            message: "No se encontró el post con el id y usuario dados",
+          });
+      }
+      // Update the post with the new data
       ads.ad = req.body.ad;
       ads.alt = req.body.alt;
       ads.position = req.body.position;
-      ads.updated_at = Date.now()
-  
-      // Save the updated ads
-      await ads.save();
-  
-      res.json({ message: "El ad fue actualizado correctamente", ads });
-        }else if(userRole==="user"){
-            // Find the post by ID and user ID
-            const ads = await Ads.findOne({ _id: adsId, createdBy: userId });
-            if (!ads) {
-                return res
-                  .status(404)
-                  .json({ message: "No se encontró el post con el id y usuario dados" });
-              }
-                    // Update the post with the new data
-      ads.ad = req.body.ad;
-      ads.alt = req.body.alt;
-      ads.position = req.body.position;
-      ads.updated_at = Date.now()
-  
-      // Save the updated ads
-      await ads.save();
-  
-      res.json({ message: "El ad fue actualizado correctamente", ads });
-        }
+      ads.updated_at = Date.now();
 
-    } catch (err) {
-      console.log("Error en el controlador:", err); // registrar el error
-      res.status(500).json({ error: "Error interno del servidor" });
+      // Save the updated ads
+      await ads.save();
+
+      res.json({ message: "El ad fue actualizado correctamente", ads });
+    } else if (userRole === "user") {
+      // Find the post by ID and user ID
+      const ads = await Ads.findOne({ _id: adsId, createdBy: userId });
+      if (!ads) {
+        return res
+          .status(404)
+          .json({
+            message: "No se encontró el post con el id y usuario dados",
+          });
+      }
+      // Update the post with the new data
+      ads.ad = req.body.ad;
+      ads.alt = req.body.alt;
+      ads.position = req.body.position;
+      ads.updated_at = Date.now();
+
+      // Save the updated ads
+      await ads.save();
+
+      res.json({ message: "El ad fue actualizado correctamente", ads });
     }
-  });
+  } catch (err) {
+    console.log("Error en el controlador:", err); // registrar el error
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
 
 // Elimina un ad por id
 router.delete("/publicidad/:id", verifyUserRole, async (req, res) => {
-    try {
-      const ads = await Ads.findByIdAndDelete(req.params.id);
-  
-      if (!ads) {
-        return res.status(404).json({
-          success: false,
-          message: "Ad not found",
-        });
-      } else {
-        res.status(200).json({
-          success: true,
-          message: "Ad deleted successfully",
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
+  try {
+    const ads = await Ads.findByIdAndDelete(req.params.id);
+
+    if (!ads) {
+      return res.status(404).json({
         success: false,
-        message: "An error occurred while deleting the Ad",
+        message: "Ad not found",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Ad deleted successfully",
       });
     }
-  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting the Ad",
+    });
+  }
+});
 
 module.exports = router;

@@ -65,10 +65,10 @@ const PostSchema = new mongoose.Schema({
     date_created: { type: String, required: true },
     date_created_gmt: { type: String, required: true },
     taxonomies: { type: [String], required: true },
-    category: { type: String },
+    category: { type: String ,required : true},
     createdBy: { type: Schema.Types.ObjectId, ref: 'Usuario'},
-    image: { type: String },//solo va a ser una url
-    imageDescription: { type: String },
+    image: { type: String ,required : true},//solo va a ser una url
+    imageDescription: { type: String ,required : true},
 });
 
 PostSchema.pre('save', function(next) {
