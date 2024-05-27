@@ -151,20 +151,9 @@ function verifyUserRole(req, res, next) {
  */
 router.post("/", verifyUserRole, async (req, res) => {
   try {
-    // Crear un nuevo documento Post con los datos del cuerpo de la solicitud
-    const newPost = new Post({
-      ...req.body,
-    });
-    // Guardar el nuevo documento Post en la base de datos
-    newPost
-      .save()
-      .then(() => res.json({ message: "Post guardado correctamente" }))
-      .catch((err) => {
-        console.log("Error al guardar el Post:", err); // registrar el error
-        res.status(400).json({
-          error: "el post no pudo guardarse por algun problema del servidor",
-        });
-      });
+    const postData = req.body;
+    const newPost = await createPost(postData);
+    res.status(201).json(newPost);
   } catch (err) {
     console.log("Error en el controlador:", err); // registrar el error
     res.status(400).json({ error: "Hay un error con tu peticion" });
@@ -191,22 +180,48 @@ router.post("/", verifyUserRole, async (req, res) => {
  *         name: content
  *
  */
+// Route to get posts
 router.get("/", async (req, res) => {
   try {
+    let posts;
+    
     if (Object.keys(req.query).length > 0) {
-      const filteredPosts = await Post.find(req.query);
-      res.json(filteredPosts);
+      posts = await Post.find(req.query).populate('createdBy', 'nombre');
     } else {
-      const posts = await Post.find();
-      res.json(posts);
+      posts = await Post.find().populate('createdBy', 'nombre');
     }
+
+    // Map the posts to include createdByName
+    const postsWithCreatedByName = posts.map(post => {
+      const postObject = post.toObject();
+      postObject.createdByName = post.createdBy ? post.createdBy.nombre : null;
+      return postObject;
+    });
+
+    res.json(postsWithCreatedByName);
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching the posts1",
+      message: "An error occurred while fetching the posts",
     });
   }
 });
+
+// Function to create a new post
+async function createPost(postData) {
+    const user = await Usuario.findById(postData.createdBy);
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    const newPost = new Post({
+        ...postData,
+        createdByName: user.nombre, // Populate the createdByName field
+    });
+
+    await newPost.save();
+    return newPost;
+}
 // Obtiene todos los posteos creados por un usuario
 /**
  * @swagger

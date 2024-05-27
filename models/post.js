@@ -67,6 +67,7 @@ const PostSchema = new mongoose.Schema({
     taxonomies: { type: [String], required: true },
     category: { type: String ,required : true},
     createdBy: { type: Schema.Types.ObjectId, ref: 'Usuario'},
+    createdByName: { type: String, required: false },
     image: { type: String ,required : true},//solo va a ser una url
     imageDescription: { type: String ,required : true},
 });
