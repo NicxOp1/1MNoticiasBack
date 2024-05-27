@@ -460,7 +460,7 @@ router.post(
   }
 );
 //editar user segun nombre
-router.put("/:nombre", verifyAdminRole, async (req, res) => {
+router.put("/user/:nombre", /* verifyAdminRole, */ async (req, res) => {
   try {
     const user = await Usuario.findOneAndUpdate(
       { nombre: req.params.nombre },
