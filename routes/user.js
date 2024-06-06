@@ -657,7 +657,6 @@ router.post("/login", async (req, res) => {
  */
 router.post("/usuario/admin",
   verifyAdminRole,
-  validateUserFields,
   async (req, res) => {
     try {
       const newUser = new Usuario({
