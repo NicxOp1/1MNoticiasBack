@@ -430,11 +430,9 @@ router.delete("/:id", verifyUserRole, async (req, res) => {
 /* USUARIOS */
 
 // crea un usuario admin
-router.post(
-  "/admin",
-  /* verifyAdminRole ,*/ async (req, res) => {
+router.post("/admin",verifyAdminRole , async (req, res) => {
     try {
-      const { nombre, apellido, password, role, description } = req.body;
+      const { nombre, apellido, password, role, description,profileImage } = req.body;
 
       // Check if user already exists
       const existingUser = await Usuario.findOne({ nombre });
@@ -453,6 +451,7 @@ router.post(
         apellido,
         password: hashedPassword,
         role,
+        description
       });
 
       // Save the new admin user to the database
@@ -655,9 +654,7 @@ router.post("/login", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.post("/usuario/admin",
-  verifyAdminRole,
-  async (req, res) => {
+router.post("/usuario/admin",verifyAdminRole,async (req, res) => {
     try {
       const newUser = new Usuario({
         created_at: Date.now(),
