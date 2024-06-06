@@ -667,7 +667,7 @@ router.post("/usuario/admin",
         apellido: req.body.apellido,
         password: bcrypt.hashSync(req.body.password, 8),
         role: req.body.role,
-        description: req.body.role,
+        description: req.body.description
       });
 
       const user = await newUser.save();
