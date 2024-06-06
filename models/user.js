@@ -45,6 +45,7 @@ const schema = new mongoose.Schema({
     apellido: {type: String, required: true},
     password: {type: String, required: true},
     role: {type: String, required: true},
+    description:{type:String, required:false}
 });
 
 const Usuario = mongoose.model('Usuario', schema, 'usuarios');

@@ -434,7 +434,7 @@ router.post(
   "/admin",
   /* verifyAdminRole ,*/ async (req, res) => {
     try {
-      const { nombre, apellido, password, role } = req.body;
+      const { nombre, apellido, password, role, description } = req.body;
 
       // Check if user already exists
       const existingUser = await Usuario.findOne({ nombre });
@@ -474,34 +474,7 @@ router.post(
     }
   }
 );
-//editar user segun nombre
-router.put("/user/:nombre", /* verifyAdminRole, */ async (req, res) => {
-  try {
-    const user = await Usuario.findOneAndUpdate(
-      { nombre: req.params.nombre },
-      { ...req.body, updated_at: Date.now() },
-      { new: true }
-    );
 
-    if (user) {
-      res.status(200).json({
-        success: true,
-        message: "User updated successfully",
-        user,
-      });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while updating the user",
-    });
-  }
-});
 // Elimina un usuario por nombre
 /**
  * @swagger
@@ -682,8 +655,7 @@ router.post("/login", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.post(
-  "/usuario/admin",
+router.post("/usuario/admin",
   verifyAdminRole,
   validateUserFields,
   async (req, res) => {
@@ -696,6 +668,7 @@ router.post(
         apellido: req.body.apellido,
         password: bcrypt.hashSync(req.body.password, 8),
         role: req.body.role,
+        description: req.body.role,
       });
 
       const user = await newUser.save();
@@ -757,6 +730,72 @@ router.get("/usuario/:id", async (req, res) => {
     res.status(500).json({ error: error.message }); // Envía el mensaje de error en la respuesta
   }
 });
+
+// Obtiene todos los usuarios
+router.get("/users",verifyAdminRole, async (req, res) => {
+  try {
+    const users = await Usuario.find();
+    if (!users) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    res.json(users);
+  } catch (error) {
+    console.error(error); // Imprime el error en la consola
+    res.status(500).json({ error: error.message }); // Envía el mensaje de error en la respuesta
+  }
+});
+
+//editar user segun id
+router.put("/userEdit/:id", verifyAdminRole, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    console.log("User ID from params:", userId);
+
+    // Verificar si el ID es válido
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    }
+
+    // Crear un objeto con los datos a actualizar
+    const updateData = { ...req.body, updated_at: Date.now() };
+
+    // Si se envía la nueva contraseña, encriptarla
+    if (req.body.newPassword) {
+      updateData.password = bcrypt.hashSync(req.body.newPassword, 8);
+      delete req.body.newPassword;
+    }
+
+    const updatedUser = await Usuario.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    );
+
+    if (updatedUser) {
+      res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+        user: updatedUser,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while updating the user",
+    });
+  }
+});
+
 
 /* Publicidades */
 
