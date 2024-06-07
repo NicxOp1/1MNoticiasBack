@@ -474,12 +474,12 @@ router.post("/admin",verifyAdminRole , async (req, res) => {
   }
 );
 
-// Elimina un usuario por nombre
+// Elimina un usuario por id
 /**
  * @swagger
- * /usuario/{nombre}:
+ * /usuario/{id}:
  *   delete:
- *     summary: Elimina un usuario por nombre
+ *     summary: Elimina un usuario por id
  *     description: Elimina un usuario de la base de datos utilizando su nombre como parámetro.
  *     parameters:
  *       - in: path
@@ -498,26 +498,21 @@ router.post("/admin",verifyAdminRole , async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete("/:nombre", verifyAdminRole, async (req, res) => {
+router.delete("/usuario/:id",verifyAdminRole, async (req, res) => {
   try {
-    const user = await Usuario.findOneAndDelete({ nombre: req.params.nombre });
+    const id = req.params.id;
+    console.log(Usuario);
+    const deletedUser = await Usuario.findByIdAndDelete(id);
+    console.log(deletedUser, "deletedUser");
 
-    if (user) {
-      res.status(200).json({
-        success: true,
-        message: "User deleted successfully",
-      });
-    } else {
-      res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    res.status(200).json({ message: "User deleted successfully", deletedUser });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while deleting the user",
-    });
+    console.error(error);
+    res.status(500).json({ error: error.message });
   }
 });
 // Controlador para ingresar y hacer login como usuario
