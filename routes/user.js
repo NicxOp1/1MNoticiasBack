@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const Usuario = require("../models/user.js");
 const Post = require("../models/post.js");
 const Ads = require("../models/ads.js");
+const Clip = require("../models/clips.js");
 const path = require("path");
 const mongoose = require("mongoose");
 
@@ -184,15 +185,15 @@ router.post("/", verifyUserRole, async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     let posts;
-    
+
     if (Object.keys(req.query).length > 0) {
-      posts = await Post.find(req.query).populate('createdBy', 'nombre');
+      posts = await Post.find(req.query).populate("createdBy", "nombre");
     } else {
-      posts = await Post.find().populate('createdBy', 'nombre');
+      posts = await Post.find().populate("createdBy", "nombre");
     }
 
     // Map the posts to include createdByName
-    const postsWithCreatedByName = posts.map(post => {
+    const postsWithCreatedByName = posts.map((post) => {
       const postObject = post.toObject();
       postObject.createdByName = post.createdBy ? post.createdBy.nombre : null;
       return postObject;
@@ -209,18 +210,18 @@ router.get("/", async (req, res) => {
 
 // Function to create a new post
 async function createPost(postData) {
-    const user = await Usuario.findById(postData.createdBy);
-    if (!user) {
-        throw new Error('User not found');
-    }
+  const user = await Usuario.findById(postData.createdBy);
+  if (!user) {
+    throw new Error("User not found");
+  }
 
-    const newPost = new Post({
-        ...postData,
-        createdByName: user.nombre, // Populate the createdByName field
-    });
+  const newPost = new Post({
+    ...postData,
+    createdByName: user.nombre, // Populate the createdByName field
+  });
 
-    await newPost.save();
-    return newPost;
+  await newPost.save();
+  return newPost;
 }
 // Obtiene todos los posteos creados por un usuario
 /**
@@ -430,49 +431,49 @@ router.delete("/:id", verifyUserRole, async (req, res) => {
 /* USUARIOS */
 
 // crea un usuario admin
-router.post("/admin",verifyAdminRole , async (req, res) => {
-    try {
-      const { nombre, apellido, password, role, description,profileImage } = req.body;
+router.post("/admin", verifyAdminRole, async (req, res) => {
+  try {
+    const { nombre, apellido, password, role, description, profileImage } =
+      req.body;
 
-      // Check if user already exists
-      const existingUser = await Usuario.findOne({ nombre });
-      if (existingUser) {
-        return res.status(400).json({ message: "El usuario ya existe" });
-      }
-
-      // Hash the password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      // Create a new admin user
-      const newAdmin = new Usuario({
-        profileImage,
-        nombre,
-        apellido,
-        password: hashedPassword,
-        role,
-        description
-      });
-
-      // Save the new admin user to the database
-      await newAdmin.save();
-
-      // Generate a token for the admin user
-      const token = jwt.sign(
-        { id: newAdmin._id, role: role },
-        process.env.Token,
-        { expiresIn: "1d" }
-      );
-
-      res
-        .status(201)
-        .json({ message: "Usuario admin creado exitosamente", token });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Error interno del servidor" });
+    // Check if user already exists
+    const existingUser = await Usuario.findOne({ nombre });
+    if (existingUser) {
+      return res.status(400).json({ message: "El usuario ya existe" });
     }
+
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create a new admin user
+    const newAdmin = new Usuario({
+      profileImage,
+      nombre,
+      apellido,
+      password: hashedPassword,
+      role,
+      description,
+    });
+
+    // Save the new admin user to the database
+    await newAdmin.save();
+
+    // Generate a token for the admin user
+    const token = jwt.sign(
+      { id: newAdmin._id, role: role },
+      process.env.Token,
+      { expiresIn: "1d" }
+    );
+
+    res
+      .status(201)
+      .json({ message: "Usuario admin creado exitosamente", token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error interno del servidor" });
   }
-);
+});
 
 // Elimina un usuario por id
 /**
@@ -498,7 +499,7 @@ router.post("/admin",verifyAdminRole , async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete("/usuario/:id",verifyAdminRole, async (req, res) => {
+router.delete("/usuario/:id", verifyAdminRole, async (req, res) => {
   try {
     const id = req.params.id;
     console.log(Usuario);
@@ -649,34 +650,33 @@ router.post("/login", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.post("/usuario/admin",verifyAdminRole,async (req, res) => {
-    try {
-      const newUser = new Usuario({
-        created_at: Date.now(),
-        updated_at: null,
-        profileImage: req.body.profileImage,
-        nombre: req.body.nombre,
-        apellido: req.body.apellido,
-        password: bcrypt.hashSync(req.body.password, 8),
-        role: req.body.role,
-        description: req.body.description
-      });
+router.post("/usuario/admin", verifyAdminRole, async (req, res) => {
+  try {
+    const newUser = new Usuario({
+      created_at: Date.now(),
+      updated_at: null,
+      profileImage: req.body.profileImage,
+      nombre: req.body.nombre,
+      apellido: req.body.apellido,
+      password: bcrypt.hashSync(req.body.password, 8),
+      role: req.body.role,
+      description: req.body.description,
+    });
 
-      const user = await newUser.save();
+    const user = await newUser.save();
 
-      res.status(201).json({
-        success: true,
-        message: "User created successfully",
-        user,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "An error occurred while creating the user",
-      });
-    }
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while creating the user",
+    });
   }
-);
+});
 // Obtiene un usuario por id
 /**
  * @swagger
@@ -723,7 +723,7 @@ router.get("/usuario/:id", async (req, res) => {
 });
 
 // Obtiene todos los usuarios
-router.get("/users",verifyAdminRole, async (req, res) => {
+router.get("/users", verifyAdminRole, async (req, res) => {
   try {
     const users = await Usuario.find();
     if (!users) {
@@ -760,11 +760,9 @@ router.put("/userEdit/:id", verifyAdminRole, async (req, res) => {
       delete req.body.newPassword;
     }
 
-    const updatedUser = await Usuario.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true }
-    );
+    const updatedUser = await Usuario.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    });
 
     if (updatedUser) {
       res.status(200).json({
@@ -786,7 +784,6 @@ router.put("/userEdit/:id", verifyAdminRole, async (req, res) => {
     });
   }
 });
-
 
 /* Publicidades */
 
@@ -908,11 +905,9 @@ router.put("/publicidad/:id", verifyUserRole, async (req, res) => {
     if (userRole === "admin") {
       const ads = await Ads.findOne({ _id: adsId });
       if (!ads) {
-        return res
-          .status(404)
-          .json({
-            message: "No se encontró el post con el id y usuario dados",
-          });
+        return res.status(404).json({
+          message: "No se encontró el post con el id y usuario dados",
+        });
       }
       // Update the post with the new data
       ads.ad = req.body.ad;
@@ -928,11 +923,9 @@ router.put("/publicidad/:id", verifyUserRole, async (req, res) => {
       // Find the post by ID and user ID
       const ads = await Ads.findOne({ _id: adsId, createdBy: userId });
       if (!ads) {
-        return res
-          .status(404)
-          .json({
-            message: "No se encontró el post con el id y usuario dados",
-          });
+        return res.status(404).json({
+          message: "No se encontró el post con el id y usuario dados",
+        });
       }
       // Update the post with the new data
       ads.ad = req.body.ad;
@@ -976,4 +969,60 @@ router.delete("/publicidad/:id", verifyUserRole, async (req, res) => {
   }
 });
 
+//Clips de Youtube
+
+router.post("/clips", verifyUserRole, async (req, res) => {
+  try {
+    const clipData = req.body;
+    const newClip = new Clip(clipData);
+
+    await newClip.save();
+
+    res.status(201).json(newClip);
+  } catch (err) {
+    console.log("Error en el controlador:", err); // registrar el error
+    res.status(400).json({ error: "Hay un error con tu peticion" });
+  }
+});
+router.get("/clips", async (req, res) => {
+  try {
+    const clips = await Clip.find();
+
+    res.status(200).json({
+      success: true,
+      data: clips,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving the Clips",
+    });
+  }
+});
+// Elimina un clip por id
+router.delete("/clips/:id", verifyUserRole, async (req, res) => {
+  try {
+    const clip = await Clip.findByIdAndDelete(req.params.id);
+
+    if (!clip) {
+      return res.status(404).json({
+        success: false,
+        message: "Clip not found",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Clip deleted successfully",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false, 
+      message: "An error occurred while deleting the Clip",
+    });
+  }
+});
+//hola kase
 module.exports = router;
