@@ -828,6 +828,7 @@ router.get("/publicidades", async (req, res) => {
         "updated_at",
         "ad",
         "alt",
+        "url",
         "position",
         "createdBy",
       ];
@@ -1028,10 +1029,13 @@ router.delete("/clips/:id", verifyUserRole, async (req, res) => {
 });
 //hola kase
 
-router.post("/paragraphWithAi", async (req, res) => {
+router.post("/paragraphwithIa", async (req, res) => {
+  
   try {
+    
     // Extraer los campos del cuerpo de la petición
     const { TITULO, CONTENIDO } = req.body;
+
 
     // Construir el contenido a enviar a la API de OpenAI basado en los campos recibidos
     const prompt = `sos un creador de copys experto con más de 25 años de experiencia en el ambito de informacion relevante y llamativa para el publico en general de un portal de noticias en el cual vas a recibir distintos textos con los macros de : 
@@ -1053,7 +1057,7 @@ router.post("/paragraphWithAi", async (req, res) => {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-4o", // Asegúrate de usar el identificador correcto del modelo GPT-4.
+        model: "gpt-3.5-turbo", // Asegúrate de usar el identificador correcto del modelo GPT-4.
         max_tokens: 1500,
         messages: [
           { role: "system", content: prompt },
@@ -1062,7 +1066,7 @@ router.post("/paragraphWithAi", async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${proccess.env.OpenIa}`, // Reemplaza TU_CLAVE_DE_API_AQUI con tu clave de API real.
+          Authorization: `Bearer ${process.env.OpenIa}`, // Reemplaza TU_CLAVE_DE_API_AQUI con tu clave de API real.
         },
       }
     );
