@@ -70,6 +70,7 @@ const PostSchema = new mongoose.Schema({
     createdByName: { type: String, required: false },
     image: { type: String ,required : true},//solo va a ser una url
     imageDescription: { type: String ,required : true},
+    TwitterLink :{ type: String ,required : false},
 });
 
 PostSchema.pre('save', function(next) {

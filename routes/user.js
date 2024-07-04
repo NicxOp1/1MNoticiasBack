@@ -1,4 +1,5 @@
 const express = require("express");
+const axios = require("axios");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
@@ -336,6 +337,7 @@ router.put("/:id", verifyUserRole, async (req, res) => {
     post.category = req.body.category;
     post.image = req.body.image;
     post.imageDescription = req.body.imageDescription;
+    post.TwitterLink = req.body.TwitterLink;
 
     // Save the updated post
     await post.save();
@@ -1019,10 +1021,67 @@ router.delete("/clips/:id", verifyUserRole, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      success: false, 
+      success: false,
       message: "An error occurred while deleting the Clip",
     });
   }
 });
 //hola kase
+
+router.post("/paragraphWithAi", async (req, res) => {
+  try {
+    // Extraer los campos del cuerpo de la petición
+    const { TITULO, CONTENIDO } = req.body;
+
+    // Construir el contenido a enviar a la API de OpenAI basado en los campos recibidos
+    const prompt = `sos un creador de copys experto con más de 25 años de experiencia en el ambito de informacion relevante y llamativa para el publico en general de un portal de noticias en el cual vas a recibir distintos textos con los macros de : 
+    ${TITULO},${CONTENIDO},
+    luego vas a tener que contestar esa informacion unicamente en el siguiente formato 
+    {TITULO}
+    {CONTENIDO}
+    {CATEGORIA}
+    {HASHTAGS}
+
+    Lo importante y tu funcion es la de poder devolver el contenido y el titulo parafraseado de la forma más humana y original posible , que sea indescifrable para una inteligencia artificial de google news para que el contenido sea autentico y creado lo mas humano posible , para ponerte en contexto deberas hacerlo para publico de mexico , con un tono y relato de la noticia de la forma mas objetiva posible , entonces seria parafrasear el titulo (con algo que sea atractivo y sea un hook llamativo) y luego el contenido de forma original , por ultimo vas a tener que entregar una cantidad de 5 hashtags validos segun la informacion de la noticia y además tendras que clasificar la noticia segun las macros que te envien de {CATEGORIA}
+    recorda que solo tenes que responder de el siguiente formato
+    {TITULO}
+    {CONTENIDO}
+    {CATEGORIA}
+    {HASHTAGS}
+    No existe oportunidad de responder de ninguna otra forma posible , si no existe el contenido de algo que te envie, dentro de la respuesta , deberas colocar como undefined`;
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o", // Asegúrate de usar el identificador correcto del modelo GPT-4.
+        max_tokens: 1500,
+        messages: [
+          { role: "system", content: prompt },
+          // Aquí puedes agregar mensajes adicionales si es necesario
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${proccess.env.OpenIa}`, // Reemplaza TU_CLAVE_DE_API_AQUI con tu clave de API real.
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (error) {
+    // Manejo de errores
+    if (error.response) {
+      console.error("Error data:", error.response.data);
+      console.error("Error status:", error.response.status);
+      console.error("Error headers:", error.response.headers);
+      res.status(error.response.status).json({ error: error.response.data });
+    } else if (error.request) {
+      console.error("Error request:", error.request);
+      res.status(500).json({ error: "No response from server" });
+    } else {
+      console.error("Error message:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 module.exports = router;
