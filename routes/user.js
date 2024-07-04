@@ -828,6 +828,7 @@ router.get("/publicidades", async (req, res) => {
         "updated_at",
         "ad",
         "alt",
+        "url",
         "position",
         "createdBy",
       ];
