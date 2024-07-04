@@ -1062,7 +1062,7 @@ router.post("/paragraphWithAi", async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer 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`, // Reemplaza TU_CLAVE_DE_API_AQUI con tu clave de API real.
+          Authorization: `Bearer ${proccess.env.OpenIa}`, // Reemplaza TU_CLAVE_DE_API_AQUI con tu clave de API real.
         },
       }
     );
