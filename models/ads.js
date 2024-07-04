@@ -7,6 +7,7 @@ const schema = new mongoose.Schema({
     updated_at: {type: Date, required: false},
     ad: {type: String, required: true},
     alt: {type: String, required: true},
+    url: {type: String, required: false},
     position: {type: String, required: true},
     createdBy: { type: Schema.Types.ObjectId, ref: 'Usuario'},
 });
