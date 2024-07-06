@@ -73,15 +73,15 @@ const PostSchema = new mongoose.Schema({
     TwitterLink :{ type: String ,required : false},
 });
 
-PostSchema.pre('save', function(next) {
-    for (let i = 0; i < this.taxonomies.length; i++) {
-        if (this.taxonomies[i] === this.taxonomies[i].toUpperCase()) {
-            this.category = this.taxonomies[i];
-            break;
-        }
-    }
-    next();
-});
+// PostSchema.pre('save', function(next) {
+//     for (let i = 0; i < this.taxonomies.length; i++) {
+//         if (this.taxonomies[i] === this.taxonomies[i].toUpperCase()) {
+//             this.category = this.taxonomies[i];
+//             break;
+//         }
+//     }
+//     next();
+// });
 
 const Post = mongoose.model('Post', PostSchema);
 
