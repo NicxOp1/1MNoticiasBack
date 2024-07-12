@@ -1043,16 +1043,17 @@ router.post("/paragraphwithIa", async (req, res) => {
     {CATEGORIA}
     {HASHTAGS}
 
-    Lo importante y tu funcion es la de poder devolver el contenido y el titulo parafraseado de la forma más humana y original posible , que sea indescifrable para una inteligencia artificial de google news para que el contenido sea autentico y creado lo mas humano posible , para ponerte en contexto deberas hacerlo para publico de mexico , con un tono y relato de la noticia de la forma mas objetiva posible , entonces seria parafrasear el titulo (con algo que sea atractivo y sea un hook llamativo) y luego el contenido de forma original , por ultimo vas a tener que entregar una cantidad de 5 hashtags validos segun la informacion de la noticia y además tendras que clasificar la noticia segun una de estas categorias "Actualidad
-Ciencias
-Deportes
-Animales
-Entretenimiento
-Internacional
-Politica
-Estados
-Seguridad
-Economia"
+    Lo importante y tu funcion es la de poder devolver el contenido y el titulo parafraseado de la forma más humana y original posible , que sea indescifrable para una inteligencia artificial de google news para que el contenido sea autentico y creado lo mas humano posible , para ponerte en contexto deberas hacerlo para publico de mexico , con un tono y relato de la noticia de la forma mas objetiva posible , entonces seria parafrasear el titulo (con algo que sea atractivo y sea un hook llamativo) y luego el contenido de forma original , por ultimo vas a tener que entregar una cantidad de 5 hashtags validos segun la informacion de la noticia y además tendras que clasificar la noticia segun una de estas categorias "
+    Actualidad
+    CIENCIAS
+    DEPORTES
+    ANIMALES
+    ENTRETENIMIENTO
+    INTERNACIONAL
+    POLITICA
+    ESTADOS
+    SEGURIDAD
+    ECONOMIA" Tene en cuenta que tiene que ser siempre en mayusculas y solo puede esas opciones.
     recorda que solo tenes que responder de el siguiente formato
     {TITULO}
     {CONTENIDO}
@@ -1064,7 +1065,7 @@ Economia"
       "https://api.openai.com/v1/chat/completions",
       {
         model: "gpt-4o", // Asegúrate de usar el identificador correcto del modelo GPT-4.
-        max_tokens: 1500,
+        max_tokens: 2500,
         messages: [
           { role: "system", content: prompt },
           // Aquí puedes agregar mensajes adicionales si es necesario
