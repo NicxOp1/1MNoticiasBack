@@ -1059,7 +1059,7 @@ router.post("/paragraphwithIa", async (req, res) => {
     {CONTENIDO}
     {CATEGORIA}
     {HASHTAGS}
-    No existe oportunidad de responder de ninguna otra forma posible , si no existe el contenido de algo que te envie, dentro de la respuesta , deberas colocar como undefined. necesito que los separes para que pueda renderizarlos en reactjs, ademas necesito que almenos el resultado sea de 2500 palabras para que sea valido y pueda ser publicado en el portal de noticias`;
+    No existe oportunidad de responder de ninguna otra forma posible , si no existe el contenido de algo que te envie, dentro de la respuesta , deberas colocar como undefined. necesito que los separes para que pueda renderizarlos en reactjs, ademas necesito que almenos el resultado sea de 4700 palabras para que sea valido y pueda ser publicado en el portal de noticias`;
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
